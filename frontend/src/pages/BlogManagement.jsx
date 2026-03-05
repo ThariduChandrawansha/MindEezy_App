@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const BlogManagement = () => {
+const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
   const { user } = useAuth();
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -50,7 +50,10 @@ const BlogManagement = () => {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('http://localhost:5000/api/blogs');
+      const url = authorId 
+        ? `http://localhost:5000/api/blogs?authorId=${authorId}`
+        : 'http://localhost:5000/api/blogs';
+      const res = await axios.get(url);
       setBlogs(res.data);
     } catch (err) {
       showNotification('error', 'Failed to fetch blogs');
@@ -145,11 +148,15 @@ const BlogManagement = () => {
   const filteredBlogs = blogs.filter(b => b.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="space-y-6">
+    <div className={`${isEmbedded ? 'space-y-4' : 'space-y-6'}`}>
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Blog Posts</h1>
-          <p className="text-slate-500 text-sm">Write and manage clinical articles.</p>
+          <h1 className={`${isEmbedded ? 'text-xl' : 'text-2xl'} font-black text-slate-800 tracking-tight`}>
+            {authorId ? 'My Articles' : 'Blog Posts'}
+          </h1>
+          <p className="text-slate-500 text-sm">
+            {authorId ? 'Manage your published medical articles.' : 'Write and manage clinical articles.'}
+          </p>
         </div>
         <button 
           onClick={handleOpenCreate}

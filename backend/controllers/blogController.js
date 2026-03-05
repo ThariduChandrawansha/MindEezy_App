@@ -49,14 +49,24 @@ exports.deleteCategory = async (req, res) => {
 
 // --- Blogs ---
 exports.getBlogs = async (req, res) => {
+  const { authorId } = req.query;
   try {
-    const [rows] = await db.query(`
+    let query = `
       SELECT b.*, c.name as category_name, u.username as author_name 
       FROM blogs b
       LEFT JOIN blog_categories c ON b.category_id = c.id
       JOIN users u ON b.author_id = u.id
-      ORDER BY b.publish_date DESC
-    `);
+    `;
+    let params = [];
+    
+    if (authorId) {
+      query += ' WHERE b.author_id = ?';
+      params.push(authorId);
+    }
+    
+    query += ' ORDER BY b.publish_date DESC';
+    
+    const [rows] = await db.query(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: err.message });

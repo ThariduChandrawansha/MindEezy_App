@@ -5,9 +5,11 @@ import { format } from 'date-fns';
 import { 
   User, Calendar as CalendarIcon, Clock, CheckCircle2, 
   X, AlertCircle, Camera, Loader2, HeartPulse, UserCircle,
-  ClipboardList, Plus, Search, HelpCircle, Trash2, Video, Star
+  ClipboardList, Plus, Search, HelpCircle, Trash2, Video, Star,
+  FileText
 } from 'lucide-react';
 import VideoConsultRoom from '../components/VideoConsultRoom';
+import BlogManagement from './BlogManagement';
 
 const DoctorDashboard = () => {
   const { user, updateUser } = useAuth();
@@ -272,6 +274,12 @@ const DoctorDashboard = () => {
                 className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'feedbacks' ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
               >
                 <Star className="h-5 w-5" /> <span>Patient Feedback</span>
+              </button>
+              <button 
+                onClick={() => setActiveTab('articles')}
+                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'articles' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
+              >
+                <FileText className="h-5 w-5" /> <span>My Articles</span>
               </button>
             </nav>
           </div>
@@ -630,6 +638,13 @@ const DoctorDashboard = () => {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* TAB: ARTICLES (BLOGS) */}
+          {activeTab === 'articles' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[600px]">
+               <BlogManagement authorId={user.id} isEmbedded={true} />
             </div>
           )}
         </div>
