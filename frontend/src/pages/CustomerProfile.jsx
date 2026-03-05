@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
   User, Settings, Heart, Bell, Key, MapPin, Book, Calendar, Clock, Camera,
-  ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, X, Loader2, ClipboardList, Video
+  ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, X, Loader2, ClipboardList, Video,
+  Star, ExternalLink, UserCheck, Stethoscope
 } from 'lucide-react';
 import { format, addDays, startOfToday, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, subMonths, addMonths, isSameDay, parseISO } from 'date-fns';
 import BookAppointmentModal from '../components/BookAppointmentModal';
@@ -12,6 +14,7 @@ import FeedbackModal from '../components/FeedbackModal';
 
 const CustomerProfile = () => {
   const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'journal'
   const [notification, setNotification] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -22,6 +25,7 @@ const CustomerProfile = () => {
   const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [mentalSummary, setMentalSummary] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [suggestedDoctors, setSuggestedDoctors] = useState([]);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -194,6 +198,7 @@ const CustomerProfile = () => {
 
   const fetchMentalSummary = async () => {
     setLoadingSummary(true);
+    setSuggestedDoctors([]);
     try {
       const dbRes = await axios.get(`http://localhost:5000/api/journals/${user.id}/all`);
       const entries = dbRes.data.filter(e => e.entry && e.entry.trim() !== '');
@@ -214,8 +219,36 @@ const CustomerProfile = () => {
         love: { text: 'Affectionate / Loving', color: 'text-pink-500 bg-pink-50 border-pink-200' }
       };
 
-      const result = emotionTextConfig[aiRes.data.emotion.toLowerCase()] || { text: 'Neutral / Unknown', color: 'text-slate-500 bg-slate-50 border-slate-200' };
-      setMentalSummary({ ...result, guide: aiRes.data.guide });
+      // Emotion → recommended specialty keywords
+      const emotionSpecialtyMap = {
+        sadness: ['depression', 'grief', 'mood', 'clinical', 'cognitive', 'psychologist', 'psychiatrist'],
+        anger: ['anger', 'stress', 'conflict', 'behavioral', 'cbt', 'management', 'therapist'],
+        fear: ['anxiety', 'trauma', 'ptsd', 'panic', 'ocd', 'phobia', 'stress', 'psychologist'],
+        joy: ['wellness', 'life', 'coaching', 'positive', 'mindfulness', 'general'],
+        love: ['relationship', 'couples', 'family', 'interpersonal', 'counseling'],
+        surprise: ['adjustment', 'adaptive', 'transition', 'crisis', 'counseling']
+      };
+
+      const emotion = aiRes.data.emotion.toLowerCase();
+      const result = emotionTextConfig[emotion] || { text: 'Neutral / Unknown', color: 'text-slate-500 bg-slate-50 border-slate-200' };
+      setMentalSummary({ ...result, guide: aiRes.data.guide, detectedEmotion: emotion });
+
+      // Fetch all professionals and filter by matching specialty
+      const docsRes = await axios.get('http://localhost:5000/api/public/doctors');
+      const allDocs = docsRes.data;
+      const keywords = emotionSpecialtyMap[emotion] || [];
+
+      // Score each doctor by how many keywords match their specialty/bio
+      const scored = allDocs.map(doc => {
+        const haystack = `${(doc.specialty || '')} ${(doc.bio || '')}`.toLowerCase();
+        const score = keywords.filter(k => haystack.includes(k)).length;
+        return { ...doc, matchScore: score };
+      });
+
+      // Sort by score desc, take top 3. If none match, just take top 3.
+      scored.sort((a, b) => b.matchScore - a.matchScore);
+      const top = scored.slice(0, 3);
+      setSuggestedDoctors(top);
       
     } catch (err) {
       console.error(err);
@@ -631,7 +664,7 @@ const CustomerProfile = () => {
                          
                          {loadingSummary ? (
                            <div className="flex items-center gap-2 text-indigo-500 font-bold px-4 py-2 bg-indigo-50 rounded-xl">
-                             <Loader2 className="h-4 w-4 animate-spin" /> Analyzing...
+                             <Loader2 className="h-4 w-4 animate-spin" /> Thinking...
                            </div>
                          ) : mentalSummary ? (
                            <div className={`px-6 py-3 rounded-xl border font-black text-sm uppercase tracking-widest shadow-sm ${mentalSummary.color || 'bg-slate-100 text-slate-500 border-slate-200'}`}>
@@ -657,6 +690,62 @@ const CustomerProfile = () => {
                          </div>
                        )}
                     </div>
+
+                    {/* AI Suggested Professionals */}
+                    {suggestedDoctors.length > 0 && (
+                      <div className="mb-6 rounded-2xl border border-violet-100 bg-white shadow-sm overflow-hidden">
+                        <div className="p-5 border-b border-violet-100 bg-gradient-to-r from-violet-50 to-purple-50 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-violet-100 rounded-xl">
+                              <Stethoscope className="h-5 w-5 text-violet-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-black text-slate-800 tracking-tight">AI-Recommended Professionals</h4>
+                              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-0.5">
+                                Matched to your {mentalSummary?.text?.toLowerCase() || 'emotional'} state
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate('/professionals')}
+                            className="flex items-center gap-1.5 text-xs font-bold text-violet-600 hover:text-violet-800 transition-colors px-3 py-1.5 bg-white rounded-xl border border-violet-200 hover:border-violet-400"
+                          >
+                            View All <ExternalLink className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="divide-y divide-slate-50">
+                          {suggestedDoctors.map((doc, i) => (
+                            <div key={doc.id} className="p-4 flex items-center gap-4 hover:bg-violet-50/30 transition-colors group">
+                              <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-sm ${i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-slate-300 text-slate-700' : 'bg-orange-300 text-white'}`}>{i + 1}</div>
+                              <div className="shrink-0 h-12 w-12 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center font-black text-lg overflow-hidden border-2 border-violet-100 shadow">
+                                {doc.profile_pic_path ? (
+                                  <img src={`http://localhost:5000${doc.profile_pic_path}`} className="h-full w-full object-cover" alt="" />
+                                ) : (
+                                  doc.username?.charAt(0).toUpperCase()
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-black text-slate-800 truncate">{doc.username}</p>
+                                <p className="text-xs text-violet-600 font-bold uppercase tracking-wider truncate mt-0.5">{doc.specialty || 'General Counseling'}</p>
+                                {doc.avg_rating ? (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                    <span className="text-xs text-slate-500 font-bold">{parseFloat(doc.avg_rating).toFixed(1)} <span className="font-normal text-slate-400">({doc.review_count} reviews)</span></span>
+                                  </div>
+                                ) : <p className="text-[10px] text-slate-400 font-bold mt-1">No reviews yet</p>}
+                                {doc.experience_years && <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{doc.experience_years} yrs experience</p>}
+                              </div>
+                              <button
+                                onClick={() => navigate(`/professionals/${doc.id}`)}
+                                className="shrink-0 flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md group-hover:scale-105"
+                              >
+                                <UserCheck className="h-3.5 w-3.5" /> View
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Days of Week Header */}
                     <div className="grid grid-cols-7 gap-2 mb-4">
