@@ -20,6 +20,8 @@ const CustomerProfile = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [monthData, setMonthData] = useState({});
   const [loadingCalendar, setLoadingCalendar] = useState(false);
+  const [mentalSummary, setMentalSummary] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,6 +70,7 @@ const CustomerProfile = () => {
   useEffect(() => {
     if (activeTab === 'journal' && user) {
       fetchMonthData(currentDate);
+      fetchMentalSummary();
     }
     if (activeTab === 'profile' && user) {
       fetchDoctors();
@@ -186,6 +189,39 @@ const CustomerProfile = () => {
       showNotification('error', 'Failed to load calendar data');
     } finally {
       setLoadingCalendar(false);
+    }
+  };
+
+  const fetchMentalSummary = async () => {
+    setLoadingSummary(true);
+    try {
+      const dbRes = await axios.get(`http://localhost:5000/api/journals/${user.id}/all`);
+      const entries = dbRes.data.filter(e => e.entry && e.entry.trim() !== '');
+      if (entries.length === 0) {
+        setMentalSummary({ emotion: 'No data', description: 'Write more journals to get an AI mentality summary.' });
+        return;
+      }
+      
+      const combinedText = entries.map(e => e.entry).join('. ');
+      const aiRes = await axios.post('http://localhost:5001/predict_emotion', { text: combinedText });
+      
+      const emotionTextConfig = {
+        joy: { text: 'Generally Positive / Joyful', color: 'text-emerald-500 bg-emerald-50 border-emerald-200' },
+        sadness: { text: 'Feeling Down / Sadness', color: 'text-blue-500 bg-blue-50 border-blue-200' },
+        anger: { text: 'Experiencing Frustration / Anger', color: 'text-rose-500 bg-rose-50 border-rose-200' },
+        fear: { text: 'Anxious / Fearful', color: 'text-purple-500 bg-purple-50 border-purple-200' },
+        surprise: { text: 'Surprised / Reactive', color: 'text-amber-500 bg-amber-50 border-amber-200' },
+        love: { text: 'Affectionate / Loving', color: 'text-pink-500 bg-pink-50 border-pink-200' }
+      };
+
+      const result = emotionTextConfig[aiRes.data.emotion.toLowerCase()] || { text: 'Neutral / Unknown', color: 'text-slate-500 bg-slate-50 border-slate-200' };
+      setMentalSummary({ ...result, guide: aiRes.data.guide });
+      
+    } catch (err) {
+      console.error(err);
+      setMentalSummary({ emotion: 'Error', description: 'Could not generate summary at this time.', color: 'text-rose-500 bg-rose-50 border-rose-200' });
+    } finally {
+      setLoadingSummary(false);
     }
   };
 
@@ -583,6 +619,45 @@ const CustomerProfile = () => {
                   <div className="py-20 text-center"><Loader2 className="h-10 w-10 animate-spin text-indigo-600 mx-auto" /></div>
                 ) : (
                   <div>
+                    {/* AI Mentality Summary */}
+                    <div className="mb-6 rounded-2xl border border-slate-100 bg-gradient-to-r from-slate-50 to-white shadow-sm overflow-hidden">
+                       <div className="p-6 flex flex-col md:flex-row items-center justify-between border-b border-slate-100">
+                         <div className="mb-4 md:mb-0">
+                           <h4 className="font-black text-slate-800 tracking-tight flex items-center mb-1">
+                             <span className="text-xl mr-2">🤖</span> AI Mentality Summary
+                           </h4>
+                           <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Based on your recent journal entries</p>
+                         </div>
+                         
+                         {loadingSummary ? (
+                           <div className="flex items-center gap-2 text-indigo-500 font-bold px-4 py-2 bg-indigo-50 rounded-xl">
+                             <Loader2 className="h-4 w-4 animate-spin" /> Analyzing...
+                           </div>
+                         ) : mentalSummary ? (
+                           <div className={`px-6 py-3 rounded-xl border font-black text-sm uppercase tracking-widest shadow-sm ${mentalSummary.color || 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                             {mentalSummary.text || mentalSummary.emotion}
+                           </div>
+                         ) : null}
+                       </div>
+                       
+                       {mentalSummary && mentalSummary.description && !mentalSummary.guide && (
+                         <div className="p-6 bg-white text-slate-600 font-medium text-sm">
+                           {mentalSummary.description}
+                         </div>
+                       )}
+
+                       {mentalSummary && mentalSummary.guide && (
+                         <div className="p-6 bg-indigo-50/50">
+                           <h5 className="font-bold text-indigo-800 mb-2 flex items-center">
+                             <span className="mr-2">💡</span> Personalized AI Guide & Advice
+                           </h5>
+                           <p className="text-indigo-900/80 leading-relaxed text-sm">
+                             {mentalSummary.guide}
+                           </p>
+                         </div>
+                       )}
+                    </div>
+
                     {/* Days of Week Header */}
                     <div className="grid grid-cols-7 gap-2 mb-4">
                       {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(dayName => (

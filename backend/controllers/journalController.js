@@ -43,6 +43,22 @@ exports.getMonthOverview = async (req, res) => {
   }
 };
 
+// Get all journals for a user (useful for AI summary)
+exports.getAllEntries = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [journals] = await db.query(
+      'SELECT journal_date, entry FROM journals WHERE user_id = ? ORDER BY journal_date DESC LIMIT 50',
+      [userId]
+    );
+
+    res.json(journals);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // Get specific day's journal and mood
 exports.getDayEntry = async (req, res) => {
   const { userId, date } = req.params;
