@@ -18,6 +18,8 @@ import {
   FileText
 } from 'lucide-react';
 
+import MentalHealthChat from '../components/MentalHealthChat';
+
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -136,6 +138,7 @@ const DashboardLayout = ({ children }) => {
           {children}
         </main>
       </div>
+      <MentalHealthChat />
     </div>
   );
 };

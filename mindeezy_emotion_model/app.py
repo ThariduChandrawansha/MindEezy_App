@@ -22,35 +22,62 @@ label_map = {
 @app.route('/predict_emotion', methods=['POST'])
 def predict_emotion():
     data = request.json
-    text = data.get('text', '')
+    text = data.get('text', '').strip()
     if not text:
         return jsonify({'error': 'No text provided'}), 400
     
-    # Run prediction
+    # Production Safety Layer: Detect Crisis Keywords
+    crisis_keywords = ['suicide', 'kill myself', 'self-harm', 'end my life', 'harm myself', 'want to die', 'cutting']
+    is_crisis = any(kw in text.lower() for kw in crisis_keywords)
+
+    if is_crisis:
+        return jsonify({
+            'emotion': 'crisis',
+            'score': 1.0,
+            'response': "I'm concerned about what you're sharing. Please know that you're not alone and there is help available right now. 💙\n\n**Please reach out to a crisis line immediately:**\n📞 **1926** (National Mental Health Helpline)\n📞 **1333** (CCC Line)\n\nYou are valuable, and things can get better. Please talk to someone.",
+            'safety_alert': True
+        })
+
     try:
-        # Pipeline handles truncation max length 512
+        # Run emotion prediction
         res = classifier(text)
         prediction = res[0]
         label = prediction['label']
         emotion = label_map.get(label, "unknown")
         
-        # Build out a larger summary guide string
-        guide_map = {
-            "anger": "It seems like you've been experiencing frustration or anger lately. This is a powerful emotion that often signals when our boundaries have been crossed or when things feel unfair. Try redirecting this energy into a productive outlet like exercise or assertive communication. Taking deep breaths and stepping away from stressful situations can also help you regain control.",
-            "fear": "You've expressed feelings of anxiety or fear. It's completely normal to feel this way when facing uncertainty. To manage this, focus on grounding exercises like the 5-4-3-2-1 technique. Break complex tasks down into smaller, manageable steps so you don't feel overwhelmed, and try to remind yourself of past challenges you've successfully navigated.",
-            "joy": "You're experiencing a period of joy and positivity! This is an excellent time to channel this energy into your creative passions, socialize with loved ones, or tackle new, exciting goals. Capitalize on this productive mood by setting long-term plans and practicing gratitude so you can reflect on this period during tougher times.",
-            "love": "You're demonstrating a lot of affection and loving energy. Focusing on positive connections is fantastic for your mental health. Use this period to strengthen your relationships, mentor others, or engage in meaningful self-care. Expanding your compassion to your community or volunteer work can also be particularly fulfilling right now.",
-            "sadness": "Your entries reflect a sense of sadness or being down. It's okay to let yourself feel this way, but be gentle with yourself. Prioritize basic self-care like getting enough sleep, eating well, and reaching out to supportive friends or a counselor. Sometimes breaking your routine with a simple walk in nature can slightly lift the fog.",
-            "surprise": "You've encountered some unexpected situations leading to feelings of surprise or shock. When life throws curveballs, it's best to take a moment to pause and reorient yourself. Focus on what you can control, adapt your plans gracefully, and remember that unexpected changes can sometimes lead to the most creative and beneficial outcomes."
+        # Expert AI Response Logic
+        # In a real production environment, this would hit an LLM like Gemini or GPT-4.
+        # Here we use a high-quality expert system matched to the detected emotion.
+        
+        response_map = {
+            "anger": "I can feel the intensity of your words. It's completely valid to feel angry when things feel unfair or overwhelming. 💙\n\nRight now, try to find a safe way to let that energy out—maybe through physical movement or writing it all down without holding back. Remember, your anger is a signal that something matters to you. What do you feel is the root cause of this frustration?",
+            "fear": "It sounds like anxiety is taking up a lot of space for you right now. That 'tight' feeling in the chest or racing thoughts can be so draining. 🌿\n\nLet's try one thing: name three things in the room that are the color blue. This helps pull your mind back from 'future-worrying' to the present safety. You've handled hard things before, and you can handle this moment too. What feels most uncertain right now?",
+            "joy": "This is wonderful to hear! 🌟 It's so important to pause and really acknowledge these moments of light. \n\nHow can you nourish this feeling? Perhaps share it with someone you care about or do something creative while you have this positive energy. What's the best part of what you're experiencing today?",
+            "love": "Warmth and connection are so vital for our well-being. 💝 It sounds like you're in a very heart-centered place. \n\nWhether it's love for a person, a pet, or even just a sense of peace with yourself, cherish it. These connections are what build our resilience. Is there someone you're feeling especially grateful for today?",
+            "sadness": "I hear the heaviness in your message, and I want you to know it's okay to not be okay right now. 💙 \n\nSadness isn't something to 'fix' immediately—sometimes it just needs to be felt. Be extra gentle with yourself today. Maybe a warm drink, a soft blanket, or just allowing yourself to rest. If you felt comfortable, could you share a bit more about what's weighing on your mind?",
+            "surprise": "Life certainly knows how to be unexpected! 🌀 When things change suddenly, it's natural to feel a bit disoriented or shocked.\n\nTake a slow breath. You don't have to have all the answers right this second. Focus on the very next small thing you can control. How has this surprise changed your perspective on things?"
         }
+        
+        # For production-ready feel, we return 'response' (chat) and 'guide' (summary)
+        # We use the same content for both here, as they are both expert AI advice.
+        ai_output = response_map.get(emotion, "Thank you for sharing that with me. I'm listening. Could you tell me more about how that makes you feel?")
         
         return jsonify({
             'emotion': emotion,
             'score': float(prediction['score']),
-            'guide': guide_map.get(emotion, "Maintain your journaling to help understand your feelings better.")
+            'response': ai_output,
+            'guide': ai_output,
+            'safety_alert': False
         })
+        
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'emotion': 'unknown',
+            'response': "I'm here to listen, but I had a small technical hiccup. Could you tell me more about what's on your mind?",
+            'error': str(e)
+        })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001)
+    # Use threaded=True for better concurrent handling in dev/prod
+    app.run(host='0.0.0.0', port=5001, threaded=True)
+
