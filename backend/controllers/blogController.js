@@ -68,7 +68,7 @@ exports.getBlogs = async (req, res) => {
     if (req.query.status) {
       conditions.push('b.status = ?');
       params.push(req.query.status);
-    } else if (!authorId) {
+    } else if (!authorId && !req.query.all_statuses) {
       // If no author filter and no status filter, default to only published (Public View)
       conditions.push("b.status = 'published'");
     }
