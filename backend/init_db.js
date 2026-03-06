@@ -69,6 +69,7 @@ async function initDB() {
         user_id INT UNSIGNED NOT NULL UNIQUE,
         qualification VARCHAR(255),
         specialty VARCHAR(255),
+        category ENUM('Psychiatrist', 'Psychologist', 'Counselor'),
         experience_years INT UNSIGNED,
         license_number VARCHAR(100),
         bio TEXT,

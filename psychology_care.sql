@@ -256,6 +256,7 @@ CREATE TABLE `professional_details` (
   `user_id` int(10) UNSIGNED NOT NULL,
   `qualification` varchar(255) DEFAULT NULL,
   `specialty` varchar(255) DEFAULT NULL,
+  `category` enum('Psychiatrist','Psychologist','Counselor') DEFAULT NULL,
   `experience_years` int(10) UNSIGNED DEFAULT NULL,
   `license_number` varchar(100) DEFAULT NULL,
   `bio` text DEFAULT NULL,

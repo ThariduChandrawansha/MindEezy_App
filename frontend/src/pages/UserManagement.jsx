@@ -153,7 +153,8 @@ const UserManagement = () => {
   const filteredUsers = users.filter(user => 
     user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.category && user.category.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -246,6 +247,9 @@ const UserManagement = () => {
                         <div>
                           <div className="font-black text-slate-800 not-italic tracking-tight">{user.username}</div>
                           <div className="text-xs text-slate-400 not-italic">{user.email}</div>
+                          {user.category && (
+                            <div className="text-[10px] text-blue-500 font-bold uppercase tracking-tighter mt-1">{user.category}</div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -459,6 +463,19 @@ const UserManagement = () => {
                         />
                       </div>
                       <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Professional Category</label>
+                        <select 
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold"
+                          value={formData.profileData.category || ''}
+                          onChange={(e) => setFormData({...formData, profileData: {...formData.profileData, category: e.target.value}})}
+                        >
+                          <option value="">Select Category</option>
+                          <option value="Psychiatrist">Psychiatrist</option>
+                          <option value="Psychologist">Psychologist</option>
+                          <option value="Counselor">Counselor</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Clinical Specialty</label>
                         <input 
                           type="text" 
@@ -560,6 +577,10 @@ const UserManagement = () => {
                   </>
                 ) : selectedUser.role === 'doctor' || selectedUser.role === 'professional' ? (
                   <>
+                    <div className="flex justify-between items-center text-[10px] font-black">
+                      <span className="text-slate-400">Category</span>
+                      <span className="text-blue-600">{selectedUser.profile?.category || 'N/A'}</span>
+                    </div>
                     <div className="flex justify-between items-center text-[10px] font-black">
                       <span className="text-slate-400">Specialty</span>
                       <span className="text-emerald-600">{selectedUser.profile?.specialty || 'N/A'}</span>

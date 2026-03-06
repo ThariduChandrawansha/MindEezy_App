@@ -35,8 +35,8 @@ exports.createUser = async (req, res) => {
       );
     } else if (role === 'doctor' || role === 'professional') {
       await connection.execute(
-        'INSERT INTO professional_details (user_id, qualification, specialty, experience_years, license_number, bio, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [userId, profileData.qualification || '', profileData.specialty || '', profileData.experience_years || 0, profileData.license_number || '', profileData.bio || '', profileData.profile_pic_path || '']
+        'INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [userId, profileData.qualification || '', profileData.specialty || '', profileData.category || null, profileData.experience_years || 0, profileData.license_number || '', profileData.bio || '', profileData.profile_pic_path || '']
       );
     }
 
@@ -54,7 +54,12 @@ exports.createUser = async (req, res) => {
 // Get All Users with Basic Info
 exports.getAllUsers = async (req, res) => {
   try {
-    const [users] = await db.execute('SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC');
+    const [users] = await db.execute(`
+      SELECT u.id, u.username, u.email, u.role, u.created_at, pd.category 
+      FROM users u
+      LEFT JOIN professional_details pd ON u.id = pd.user_id
+      ORDER BY u.created_at DESC
+    `);
     res.json(users);
   } catch (err) {
     console.error(err);
@@ -108,8 +113,8 @@ exports.updateUser = async (req, res) => {
       );
     } else if (role === 'doctor' || role === 'professional') {
       await connection.execute(
-        'INSERT INTO professional_details (user_id, qualification, specialty, experience_years, license_number, bio, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE qualification=?, specialty=?, experience_years=?, license_number=?, bio=?, profile_pic_path=?',
-        [id, profileData.qualification, profileData.specialty, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path, profileData.qualification, profileData.specialty, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path]
+        'INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE qualification=?, specialty=?, category=?, experience_years=?, license_number=?, bio=?, profile_pic_path=?',
+        [id, profileData.qualification, profileData.specialty, profileData.category, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path, profileData.qualification, profileData.specialty, profileData.category, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path]
       );
     }
 

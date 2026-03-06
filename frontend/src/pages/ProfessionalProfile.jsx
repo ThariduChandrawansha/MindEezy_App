@@ -96,7 +96,14 @@ const ProfessionalProfile = () => {
                           </span>
                         ) : null}
                       </div>
-                      <p className="text-lg md:text-xl text-blue-600 font-bold mb-4">{prof.specialty || 'General Practitioner'}</p>
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        {prof.category && (
+                          <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg border border-blue-500">
+                            {prof.category}
+                          </span>
+                        )}
+                        <p className="text-lg md:text-xl text-blue-600 font-bold">{prof.specialty || 'General Practitioner'}</p>
+                      </div>
                       
                       <div className="flex flex-wrap items-center gap-4 md:gap-8">
                         {/* Rating block */}

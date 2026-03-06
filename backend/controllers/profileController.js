@@ -88,7 +88,7 @@ exports.getProfessionalProfile = async (req, res) => {
 
 exports.updateProfessionalProfile = async (req, res) => {
   const { userId } = req.params;
-  const { qualification, specialty, experience_years, license_number, bio, availability } = req.body;
+  const { qualification, specialty, category, experience_years, license_number, bio, availability } = req.body;
 
   try {
     const [existing] = await db.query('SELECT id FROM professional_details WHERE user_id = ?', [userId]);
@@ -96,16 +96,16 @@ exports.updateProfessionalProfile = async (req, res) => {
     if (existing.length > 0) {
       await db.query(
         `UPDATE professional_details SET 
-          qualification = ?, specialty = ?, experience_years = ?, 
+          qualification = ?, specialty = ?, category = ?, experience_years = ?, 
           license_number = ?, bio = ?, availability = ?
         WHERE user_id = ?`,
-        [qualification || null, specialty || null, experience_years || null, license_number || null, bio || null, availability ? JSON.stringify(availability) : null, userId]
+        [qualification || null, specialty || null, category || null, experience_years || null, license_number || null, bio || null, availability ? JSON.stringify(availability) : null, userId]
       );
     } else {
       await db.query(
-        `INSERT INTO professional_details (user_id, qualification, specialty, experience_years, license_number, bio, availability)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [userId, qualification || null, specialty || null, experience_years || null, license_number || null, bio || null, availability ? JSON.stringify(availability) : null]
+        `INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, availability)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, qualification || null, specialty || null, category || null, experience_years || null, license_number || null, bio || null, availability ? JSON.stringify(availability) : null]
       );
     }
     
