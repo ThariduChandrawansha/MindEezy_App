@@ -9,6 +9,9 @@ const Professionals = () => {
   const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  const categories = ['All', 'Psychiatrist', 'Psychologist', 'Counselor'];
 
   useEffect(() => {
     const fetchProfessionals = async () => {
@@ -24,10 +27,12 @@ const Professionals = () => {
     fetchProfessionals();
   }, []);
 
-  const filteredProfessionals = professionals.filter(p => 
-    p.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (p.specialty && p.specialty.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredProfessionals = professionals.filter(p => {
+    const matchesSearch = p.username.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      (p.specialty && p.specialty.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -43,14 +48,31 @@ const Professionals = () => {
             </h1>
             <p className="text-lg text-slate-500 font-medium">Browse our network of licensed psychologists, therapists, and counselors ready to help you navigate life's challenges.</p>
             
+            {/* Categories */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-8">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-6 py-2 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
+                    selectedCategory === cat
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
             {/* Search */}
-            <div className="mt-8 relative max-w-xl mx-auto group">
+            <div className="mt-6 relative max-w-xl mx-auto group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
               </div>
               <input 
                 type="text" 
-                placeholder="Search by name or specialty (e.g., Anxiety, CBT)..."
+                placeholder={`Search ${selectedCategory === 'All' ? 'professionals' : selectedCategory.toLowerCase() + 's'}...`}
                 className="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-400 transition-all text-slate-700 shadow-sm font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -78,8 +100,13 @@ const Professionals = () => {
                 return (
                   <div key={prof.id} className="bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group overflow-hidden flex flex-col h-full relative">
                     {/* Specialty Badge */}
-                    <div className="absolute top-4 left-4 z-10">
-                       <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-blue-700 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm border border-blue-100">
+                    <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                       {prof.category && (
+                         <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg border border-blue-500">
+                           {prof.category}
+                         </span>
+                       )}
+                       <span className="px-3 py-1 bg-white/90 backdrop-blur-sm text-slate-700 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm border border-slate-200 self-start">
                          {prof.specialty || 'General'}
                        </span>
                     </div>

@@ -115,9 +115,10 @@ exports.sendContactEmail = async (req, res) => {
 
 // Get all professionals with basic stats
 exports.getProfessionals = async (req, res) => {
+  const { category } = req.query;
   try {
-    const query = `
-      SELECT u.id, u.username, pd.specialty, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio,
+    let query = `
+      SELECT u.id, u.username, pd.specialty, pd.category, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio,
              (SELECT COUNT(*) FROM appointments a WHERE a.professional_id = u.id AND a.status != 'cancelled') as total_channelings,
              (SELECT AVG(rating) FROM feedbacks f WHERE f.doctor_id = u.id) as avg_rating,
              (SELECT COUNT(*) FROM feedbacks f WHERE f.doctor_id = u.id) as review_count
@@ -125,7 +126,14 @@ exports.getProfessionals = async (req, res) => {
       LEFT JOIN professional_details pd ON u.id = pd.user_id 
       WHERE u.role IN ('doctor', 'professional')
     `;
-    const [rows] = await db.query(query);
+    
+    const queryParams = [];
+    if (category) {
+      query += ` AND pd.category = ?`;
+      queryParams.push(category);
+    }
+
+    const [rows] = await db.query(query, queryParams);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -137,7 +145,7 @@ exports.getProfessionalById = async (req, res) => {
   const { id } = req.params;
   try {
     const query = `
-      SELECT u.id, u.username, pd.specialty, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio, pd.license_number, pd.online_available,
+      SELECT u.id, u.username, pd.specialty, pd.category, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio, pd.license_number, pd.online_available,
              (SELECT COUNT(*) FROM appointments a WHERE a.professional_id = u.id AND a.status != 'cancelled') as total_channelings,
              (SELECT AVG(rating) FROM feedbacks f WHERE f.doctor_id = u.id) as avg_rating,
              (SELECT COUNT(*) FROM feedbacks f WHERE f.doctor_id = u.id) as review_count

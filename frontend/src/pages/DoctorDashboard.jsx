@@ -20,7 +20,7 @@ const DoctorDashboard = () => {
   const [profDetails, setProfDetails] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    qualification: '', specialty: '', experience_years: '', license_number: '', bio: ''
+    qualification: '', specialty: '', category: '', experience_years: '', license_number: '', bio: ''
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -88,6 +88,7 @@ const DoctorDashboard = () => {
         setProfileForm({
           qualification: res.data.qualification || '',
           specialty: res.data.specialty || '',
+          category: res.data.category || '',
           experience_years: res.data.experience_years || '',
           license_number: res.data.license_number || '',
           bio: res.data.bio || ''
@@ -228,7 +229,14 @@ const DoctorDashboard = () => {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-4xl font-black text-slate-800 tracking-tight">Dr. {user?.username}</h1>
-              <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-1">Licensed Professional • Ready to help</p>
+              <div className="flex items-center gap-2 mt-1">
+                {profDetails?.category && (
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] uppercase tracking-widest font-black rounded-lg border border-emerald-200">
+                    {profDetails.category}
+                  </span>
+                )}
+                <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Licensed Professional • Ready to help</p>
+              </div>
             </div>
             {activeTab === 'profile' && (
               <button 
@@ -297,8 +305,21 @@ const DoctorDashboard = () => {
                 <form onSubmit={handleProfileSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Specialty</label>
-                       <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400" placeholder="e.g. Clinical Psychology" value={profileForm.specialty} onChange={e => setProfileForm({...profileForm, specialty: e.target.value})} />
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Professional Category</label>
+                       <select 
+                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400 font-bold"
+                         value={profileForm.category} 
+                         onChange={e => setProfileForm({...profileForm, category: e.target.value})}
+                       >
+                         <option value="">Select Category</option>
+                         <option value="Psychiatrist">Psychiatrist</option>
+                         <option value="Psychologist">Psychologist</option>
+                         <option value="Counselor">Counselor</option>
+                       </select>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Clinical Specialty</label>
+                       <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400" placeholder="e.g. Anxiety & OCD" value={profileForm.specialty} onChange={e => setProfileForm({...profileForm, specialty: e.target.value})} />
                     </div>
                     <div className="space-y-2">
                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Qualifications</label>
@@ -331,7 +352,10 @@ const DoctorDashboard = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Specialization<span className="text-slate-800 text-base normal-case font-bold">{profDetails?.specialty || '-'}</span></p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Professional Category<span className="text-emerald-700 text-base normal-case font-bold">{profDetails?.category || '-'}</span></p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Clinical Specialty<span className="text-slate-800 text-base normal-case font-bold">{profDetails?.specialty || '-'}</span></p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Qualifications<span className="text-slate-800 text-base normal-case font-bold">{profDetails?.qualification || '-'}</span></p>
