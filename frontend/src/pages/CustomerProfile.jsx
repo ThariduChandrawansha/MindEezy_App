@@ -446,12 +446,7 @@ const emojis = [
               >
                 <ClipboardList className="h-5 w-5" /> <span>Assessments</span>
               </button>
-              <button className="w-full flex items-center space-x-3 p-4 text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all font-bold">
-                <Heart className="h-5 w-5" /> <span>My Favorites</span>
-              </button>
-              <button className="w-full flex items-center space-x-3 p-4 text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all font-bold">
-                <Settings className="h-5 w-5" /> <span>Settings</span>
-              </button>
+           
             </nav>
           </div>
         </div>
