@@ -35,8 +35,8 @@ exports.createUser = async (req, res) => {
       );
     } else if (role === 'doctor' || role === 'professional') {
       await connection.execute(
-        'INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [userId, profileData.qualification || '', profileData.specialty || '', profileData.category || null, profileData.experience_years || 0, profileData.license_number || '', profileData.bio || '', profileData.profile_pic_path || '']
+        'INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, profile_pic_path, license_image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [userId, profileData.qualification || '', profileData.specialty || '', profileData.category || null, profileData.experience_years || 0, profileData.license_number || '', profileData.bio || '', profileData.profile_pic_path || '', profileData.license_image_path || null]
       );
     }
 
@@ -113,8 +113,8 @@ exports.updateUser = async (req, res) => {
       );
     } else if (role === 'doctor' || role === 'professional') {
       await connection.execute(
-        'INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE qualification=?, specialty=?, category=?, experience_years=?, license_number=?, bio=?, profile_pic_path=?',
-        [id, profileData.qualification, profileData.specialty, profileData.category, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path, profileData.qualification, profileData.specialty, profileData.category, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path]
+        'INSERT INTO professional_details (user_id, qualification, specialty, category, experience_years, license_number, bio, profile_pic_path, license_image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE qualification=?, specialty=?, category=?, experience_years=?, license_number=?, bio=?, profile_pic_path=?, license_image_path=?',
+        [id, profileData.qualification, profileData.specialty, profileData.category, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path, profileData.license_image_path, profileData.qualification, profileData.specialty, profileData.category, profileData.experience_years, profileData.license_number, profileData.bio, profileData.profile_pic_path, profileData.license_image_path]
       );
     }
 

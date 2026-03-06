@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, User, UserPlus, AlertCircle, Loader2, HeartPulse, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, AlertCircle, Loader2, HeartPulse, CheckCircle2, ArrowRight, ShieldCheck } from 'lucide-react';
+import axios from 'axios';
 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('customer');
+  const [licenseImage, setLicenseImage] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -24,8 +27,24 @@ const Register = () => {
       return;
     }
 
+    if (role === 'doctor' && !licenseImage) {
+      setError('A medical license image is required for Doctor accounts');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await register(username, email, password);
+      let licenseUrl = null;
+      if (role === 'doctor' && licenseImage) {
+        const fd = new FormData();
+        fd.append('image', licenseImage);
+        const uploadRes = await axios.post('http://localhost:5000/api/users/upload', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        licenseUrl = uploadRes.data.filePath;
+      }
+      
+      await register(username, email, password, role, licenseUrl);
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -93,6 +112,23 @@ const Register = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                     <button
+                       type="button"
+                       onClick={() => setRole('customer')}
+                       className={`py-3 px-4 rounded-xl border-2 font-black transition-all text-xs tracking-widest uppercase flex items-center justify-center gap-2 ${role === 'customer' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-100 text-slate-400 hover:border-blue-200 hover:bg-blue-50/50'}`}
+                     >
+                       <User className="h-4 w-4" /> Patient
+                     </button>
+                     <button
+                       type="button"
+                       onClick={() => setRole('doctor')}
+                       className={`py-3 px-4 rounded-xl border-2 font-black transition-all text-xs tracking-widest uppercase flex items-center justify-center gap-2 ${role === 'doctor' ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-100 text-slate-400 hover:border-emerald-200 hover:bg-emerald-50/50'}`}
+                     >
+                       <ShieldCheck className="h-4 w-4" /> Doctor
+                     </button>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-4">Identity</label>
                     <div className="relative group">
@@ -142,6 +178,20 @@ const Register = () => {
                         </div>
                     </div>
                   </div>
+
+                  {role === 'doctor' && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 ml-4">Medical License (Required)</label>
+                      <div className="relative group">
+                         <input
+                           type="file" accept="image/*" required={role === 'doctor'}
+                           onChange={(e) => setLicenseImage(e.target.files[0])}
+                           className="w-full text-xs text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:tracking-widest file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer bg-slate-50 border border-slate-200 p-2 rounded-2xl"
+                         />
+                      </div>
+                      <p className="text-[10px] text-slate-400 ml-4 italic mt-1 font-medium">Please upload a clear image of your active medical license. Max 2MB.</p>
+                    </div>
+                  )}
 
                   <button
                     type="submit" disabled={loading}

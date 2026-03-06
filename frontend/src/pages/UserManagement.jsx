@@ -66,15 +66,34 @@ const UserManagement = () => {
       const res = await axios.post('http://localhost:5000/api/users/upload', formDataFile, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setFormData({
-        ...formData,
-        profileData: { ...formData.profileData, profile_pic_path: res.data.filePath }
-      });
-      showNotification('success', 'Image uploaded successfully');
+      return res.data.filePath;
     } catch (err) {
       showNotification('error', 'Image upload failed');
+      return null;
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleProfileImageUpload = async (e) => {
+    const path = await handleImageUpload(e);
+    if (path) {
+      setFormData({
+        ...formData,
+        profileData: { ...formData.profileData, profile_pic_path: path }
+      });
+      showNotification('success', 'Profile image uploaded successfully');
+    }
+  };
+
+  const handleLicenseImageUpload = async (e) => {
+    const path = await handleImageUpload(e);
+    if (path) {
+      setFormData({
+        ...formData,
+        profileData: { ...formData.profileData, license_image_path: path }
+      });
+      showNotification('success', 'License image uploaded successfully');
     }
   };
 
@@ -421,7 +440,7 @@ const UserManagement = () => {
                        <input 
                          type="file" 
                          accept="image/*"
-                         onChange={handleImageUpload}
+                         onChange={handleProfileImageUpload}
                          className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                        />
                        <p className="text-[10px] text-slate-400">JPG, PNG or WEBP. Max 2MB.</p>
@@ -550,6 +569,28 @@ const UserManagement = () => {
                           onChange={(e) => setFormData({...formData, profileData: {...formData.profileData, license_number: e.target.value}})}
                         />
                       </div>
+                      <div className="col-span-full space-y-4 pt-4 border-t border-slate-100">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">License Image Document</label>
+                        <div className="flex items-center space-x-6">
+                            <div className="h-24 w-40 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden">
+                              {formData.profileData.license_image_path ? (
+                                <img src={`http://localhost:5000${formData.profileData.license_image_path}`} className="h-full w-full object-cover" alt="License" />
+                              ) : (
+                                <span className="text-xs font-bold text-slate-300 uppercase">No Image</span>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                               <input 
+                                 type="file" 
+                                 accept="image/*"
+                                 onChange={handleLicenseImageUpload}
+                                 className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                               />
+                               <p className="text-[10px] text-slate-400">Upload official medical license image. Max 2MB.</p>
+                               {uploading && <div className="text-emerald-600 text-xs font-bold animate-pulse italic">Uploading...</div>}
+                            </div>
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Years of Exp.</label>
                         <input 
@@ -645,6 +686,16 @@ const UserManagement = () => {
                       <span className="text-slate-400">Category</span>
                       <span className="text-blue-600">{selectedUser.profile?.category || 'N/A'}</span>
                     </div>
+                    <div className="flex justify-between items-center text-[10px] font-black">
+                      <span className="text-slate-400">License Number</span>
+                      <span className="text-emerald-600">{selectedUser.profile?.license_number || 'N/A'}</span>
+                    </div>
+                    {selectedUser.profile?.license_image_path && (
+                      <div className="flex flex-col gap-2 pt-2 border-t border-slate-50">
+                        <span className="text-slate-400 text-[10px] font-black">License Document</span>
+                        <img src={`http://localhost:5000${selectedUser.profile.license_image_path}`} className="w-full h-32 object-cover rounded-xl border border-slate-200" alt="License" />
+                      </div>
+                    )}
                     <div className="flex justify-between items-center text-[10px] font-black">
                       <span className="text-slate-400">Specialty</span>
                       <span className="text-emerald-600">{selectedUser.profile?.specialty || 'N/A'}</span>
