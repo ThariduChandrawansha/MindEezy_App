@@ -1,15 +1,252 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { format } from 'date-fns';
+import { format, parseISO, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, subMonths, addMonths, isSameDay } from 'date-fns';
 import { 
   User, Calendar as CalendarIcon, Clock, CheckCircle2, 
   X, AlertCircle, Camera, Loader2, HeartPulse, UserCircle,
   ClipboardList, Plus, Search, HelpCircle, Trash2, Video, Star,
-  FileText
+  FileText, ChevronLeft, ChevronRight, Book
 } from 'lucide-react';
 import VideoConsultRoom from '../components/VideoConsultRoom';
 import BlogManagement from './BlogManagement';
+
+const PatientProgressModal = ({ isOpen, onClose, patient, doctorId }) => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [monthData, setMonthData] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [entryData, setEntryData] = useState(null);
+  const [loadingEntry, setLoadingEntry] = useState(false);
+  
+  // AI Summary State
+  const [mentalSummary, setMentalSummary] = useState(null);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && patient) {
+      fetchMonthData(currentDate);
+      fetchMentalSummary();
+      // Auto-select today
+      const todayStr = format(new Date(), 'yyyy-MM-dd');
+      handleDateClick(todayStr);
+    }
+  }, [isOpen, currentDate, patient]);
+
+  const fetchMonthData = async (date) => {
+    setLoading(true);
+    try {
+      const year = format(date, 'yyyy');
+      const month = format(date, 'MM');
+      const res = await axios.get(`http://localhost:5000/api/journals/professional/${doctorId}/patient/${patient.user_id}/month?year=${year}&month=${month}`);
+      setMonthData(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMentalSummary = async () => {
+    setLoadingSummary(true);
+    try {
+      const dbRes = await axios.get(`http://localhost:5000/api/journals/professional/${doctorId}/patient/${patient.user_id}/all`);
+      const entries = dbRes.data.filter(e => e.entry && e.entry.trim() !== '');
+      
+      if (entries.length === 0) {
+        setMentalSummary({ emotion: 'Insufficient Data', description: 'Patient has not written enough journal entries for AI analysis.', color: 'bg-slate-100 text-slate-500 border-slate-200' });
+        return;
+      }
+      
+      const combinedText = entries.map(e => e.entry).join('. ');
+      const aiRes = await axios.post('http://localhost:5001/predict_emotion', { text: combinedText });
+      
+      const emotionTextConfig = {
+        joy: { text: 'Generally Positive / Joyful', color: 'text-emerald-500 bg-emerald-50 border-emerald-200' },
+        sadness: { text: 'Feeling Down / Sadness', color: 'text-blue-500 bg-blue-50 border-blue-200' },
+        anger: { text: 'Experiencing Frustration / Anger', color: 'text-rose-500 bg-rose-50 border-rose-200' },
+        fear: { text: 'Anxious / Fearful', color: 'text-purple-500 bg-purple-50 border-purple-200' },
+        surprise: { text: 'Surprised / Reactive', color: 'text-amber-500 bg-amber-50 border-amber-200' },
+        love: { text: 'Affectionate / Loving', color: 'text-pink-500 bg-pink-50 border-pink-200' }
+      };
+
+      const emotion = aiRes.data.emotion.toLowerCase();
+      const result = emotionTextConfig[emotion] || { text: 'Neutral / Unknown', color: 'text-slate-500 bg-slate-50 border-slate-200' };
+      setMentalSummary({ ...result, guide: aiRes.data.guide, detectedEmotion: emotion });
+    } catch (err) {
+      console.error(err);
+      setMentalSummary({ emotion: 'Analysis Pending', description: 'Could not generate summary at this time.', color: 'text-rose-500 bg-rose-50 border-rose-200' });
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  const handleDateClick = async (dateStr) => {
+    setSelectedDate(dateStr);
+    setLoadingEntry(true);
+    try {
+      const res = await axios.get(`http://localhost:5000/api/journals/professional/${doctorId}/patient/${patient.user_id}/date/${dateStr}`);
+      // Ensure we set entryData even if empty to show the details side correctly
+      setEntryData(res.data || { mood_level: 0, note: '', entry: '' });
+    } catch (err) {
+      console.error(err);
+      setEntryData({ mood_level: 0, note: 'Error loading data', entry: '' });
+    } finally {
+      setLoadingEntry(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  // Calendar builder
+  const startDate = startOfWeek(startOfMonth(currentDate));
+  const endDate = endOfWeek(endOfMonth(currentDate));
+  const days = [];
+  let day = startDate;
+  while (day <= endDate) {
+    days.push(day);
+    day = addDays(day, 1);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white rounded-[32px] shadow-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col border border-white/20">
+        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="flex items-center gap-4">
+             <div className="h-12 w-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white">
+                <HeartPulse className="h-6 w-6" />
+             </div>
+             <div>
+                <h3 className="text-xl font-black text-slate-800">Clinical Progress View</h3>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Patient: {patient?.patient_name}</p>
+             </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X className="h-6 w-6 text-slate-400" /></button>
+        </div>
+
+        <div className="flex-grow overflow-y-auto p-8">
+          {/* AI SUMMARY ROW */}
+          <div className="mb-8 p-6 bg-slate-50 rounded-[32px] border border-slate-100 shadow-inner">
+             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="max-w-xl">
+                   <h4 className="font-black text-slate-800 text-lg flex items-center gap-2 mb-2">
+                      <span className="text-2xl">🤖</span> AI Clinical Sentiment Analysis
+                   </h4>
+                   {loadingSummary ? (
+                     <div className="flex items-center gap-3 text-emerald-600 font-bold">
+                        <Loader2 className="h-5 w-5 animate-spin" /> Performing linguistic analysis...
+                     </div>
+                   ) : mentalSummary ? (
+                      <div className="space-y-3">
+                         <div className={`inline-flex px-4 py-2 rounded-xl border font-black text-xs uppercase tracking-widest shadow-sm ${mentalSummary.color}`}>
+                            Current State: {mentalSummary.text || mentalSummary.emotion}
+                         </div>
+                         <p className="text-sm font-medium text-slate-600 leading-relaxed italic border-l-4 border-indigo-200 pl-4 bg-white/50 p-3 rounded-r-xl">
+                           {mentalSummary.guide || mentalSummary.description}
+                         </p>
+                      </div>
+                   ) : null}
+                </div>
+               
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Calendar Side */}
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-slate-900 text-white p-5 rounded-3xl shadow-xl">
+                <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2 hover:bg-white/10 rounded-xl transition-colors"><ChevronLeft className="h-5 w-5" /></button>
+                <span className="font-black uppercase tracking-[0.2em] text-xs">{format(currentDate, 'MMMM yyyy')}</span>
+                <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-2 hover:bg-white/10 rounded-xl transition-colors"><ChevronRight className="h-5 w-5" /></button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-3">
+                {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">{d}</div>)}
+                {days.map((d, i) => {
+                  const dateStr = format(d, 'yyyy-MM-dd');
+                  const isCurrMonth = isSameMonth(d, currentDate);
+                  const dayData = monthData[dateStr];
+                  const isSelected = selectedDate === dateStr;
+
+                  return (
+                    <div 
+                      key={i} 
+                      onClick={() => isCurrMonth && handleDateClick(dateStr)}
+                      className={`h-14 flex items-center justify-center rounded-2xl text-xs font-black cursor-pointer transition-all border-2 
+                        ${!isCurrMonth ? 'opacity-10 pointer-events-none' : 'hover:border-indigo-400 hover:scale-105'}
+                        ${isSelected ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-200' : 'bg-slate-50 border-slate-100'}
+                        ${dayData?.hasMood ? 'ring-2 ring-amber-400 ring-offset-2' : ''}
+                        ${dayData?.hasJournal ? 'relative after:content-[""] after:absolute after:bottom-2 after:h-1 after:w-4 after:bg-emerald-400 after:rounded-full' : ''}
+                      `}
+                    >
+                      {format(d, 'd')}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-wrap gap-4 pt-4">
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                  <div className="h-3 w-3 rounded-full bg-amber-400 shadow-sm shadow-amber-200"></div> Mood Logged
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                  <div className="h-1 w-4 bg-emerald-400 rounded-full shadow-sm shadow-emerald-200"></div> Journal Entry
+                </div>
+              </div>
+            </div>
+
+            {/* Details Side */}
+            <div className="bg-slate-50 rounded-[40px] p-8 border border-slate-100 min-h-[500px] shadow-inner">
+              {loadingEntry ? (
+                <div className="h-full flex flex-col items-center justify-center text-indigo-400">
+                  <Loader2 className="h-12 w-12 animate-spin mb-4" />
+                  <p className="text-xs font-black uppercase tracking-[0.2em]">Accessing patient archives...</p>
+                </div>
+              ) : selectedDate ? (
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-8 duration-500">
+                  <div className="flex justify-between items-start">
+                     <div>
+                       <h4 className="font-black text-slate-800 text-2xl tracking-tight leading-none mb-1">
+                         {format(parseISO(selectedDate), 'MMMM do')}
+                       </h4>
+                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{format(parseISO(selectedDate), 'yyyy')}</p>
+                     </div>
+                     {entryData?.mood_level > 0 && (
+                       <div className="px-4 py-2 bg-white text-emerald-800 rounded-2xl font-black text-xs uppercase tracking-widest border border-slate-200 shadow-sm flex items-center gap-2">
+                         <span className="text-xl">📊</span> Wellness Score: {entryData.mood_level}/5
+                       </div>
+                     )}
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="group">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3 pl-2 group-hover:text-amber-500 transition-colors">Patient Mood Notes</label>
+                      <div className="p-5 bg-white rounded-3xl border border-slate-100 text-sm font-bold text-slate-600 leading-relaxed italic shadow-sm group-hover:shadow-md transition-all">
+                        {entryData?.note ? `"${entryData.note}"` : "Patient recorded a mood level but did not provide supplementary notes for this day."}
+                      </div>
+                    </div>
+                    <div className="group">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3 pl-2 group-hover:text-emerald-500 transition-colors">Daily Journal Record</label>
+                      <div className="p-8 bg-white rounded-[32px] border border-slate-100 text-sm font-bold text-slate-800 leading-relaxed whitespace-pre-line shadow-sm min-h-[250px] group-hover:shadow-md transition-all">
+                        {entryData?.entry || "No journal entry was logged for this date. The patient may have focused on mood tracking only."}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-12 opacity-30">
+                  <Book className="h-20 w-20 mb-6 text-slate-400" />
+                  <h5 className="text-xl font-black text-slate-800 mb-2">Patient Archive</h5>
+                  <p className="text-sm font-bold text-slate-500 max-w-xs">Select a date from the clinical calendar on the left to review specific patient history.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DoctorDashboard = () => {
   const { user, updateUser } = useAuth();
@@ -29,6 +266,8 @@ const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [loadingAppts, setLoadingAppts] = useState(true);
   const [activeVideoRoom, setActiveVideoRoom] = useState(null); // { roomName, displayName }
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
 
   // Assessments State
   const [assessments, setAssessments] = useState([]);
@@ -432,13 +671,22 @@ const DoctorDashboard = () => {
                                {format(new Date(app.appointment_datetime), 'EEEE, MMM do, h:mm a')}
                             </div>
 
-                            <div className="flex gap-2 w-full md:w-auto mt-2">
-                               {app.status === 'pending' && (
-                                 <>
-                                   <button onClick={() => updateStatus(app.id, 'confirmed')} className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition-all">Confirm</button>
-                                   <button onClick={() => updateStatus(app.id, 'cancelled')} className="flex-1 px-4 py-2 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">Reject</button>
-                                 </>
-                               )}
+                               <div className="flex gap-2 w-full md:w-auto mt-2 flex-wrap justify-end">
+                                 {app.status === 'pending' && (
+                                   <>
+                                     <button onClick={() => updateStatus(app.id, 'confirmed')} className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition-all">Confirm</button>
+                                     <button onClick={() => updateStatus(app.id, 'cancelled')} className="flex-1 px-4 py-2 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">Reject</button>
+                                     <button 
+                                       onClick={() => {
+                                         setSelectedPatient(app);
+                                         setIsProgressModalOpen(true);
+                                       }}
+                                       className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition-all"
+                                     >
+                                        Progress
+                                     </button>
+                                   </>
+                                 )}
                                {app.status === 'confirmed' && (
                                  <div className="flex gap-2 w-full md:w-auto flex-wrap">
                                    <button
@@ -452,12 +700,34 @@ const DoctorDashboard = () => {
                                    </button>
                                    <button onClick={() => updateStatus(app.id, 'completed')} className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition-all">Complete</button>
                                    <button onClick={() => updateStatus(app.id, 'cancelled')} className="flex-1 px-4 py-2 bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-600 rounded-lg text-xs font-bold uppercase tracking-widest transition-all">Cancel</button>
+                                   <button 
+                                     onClick={() => {
+                                       setSelectedPatient(app);
+                                       setIsProgressModalOpen(true);
+                                     }}
+                                     className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition-all"
+                                   >
+                                      <Book className="h-3.5 w-3.5" /> Progress
+                                   </button>
                                  </div>
                                )}
                                {(app.status === 'completed' || app.status === 'cancelled') && (
-                                 <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400">
-                                   Session Status: {app.status}
-                                 </span>
+                                 <div className="flex items-center gap-2">
+                                   <span className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400">
+                                     Session Status: {app.status}
+                                   </span>
+                                   {app.status === 'completed' && (
+                                      <button 
+                                        onClick={() => {
+                                          setSelectedPatient(app);
+                                          setIsProgressModalOpen(true);
+                                        }}
+                                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md transition-all"
+                                      >
+                                          Progress
+                                      </button>
+                                   )}
+                                 </div>
                                )}
                             </div>
                           </div>
@@ -683,6 +953,14 @@ const DoctorDashboard = () => {
           <span className="font-bold text-sm tracking-tight">{notification.message}</span>
         </div>
       )}
+
+      {/* Progress Modal */}
+      <PatientProgressModal 
+        isOpen={isProgressModalOpen} 
+        onClose={() => setIsProgressModalOpen(false)}
+        patient={selectedPatient}
+        doctorId={user?.id}
+      />
 
       {/* Video Consult Room */}
       {activeVideoRoom && (
