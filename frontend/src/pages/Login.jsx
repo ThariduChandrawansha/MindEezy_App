@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn, AlertCircle, Loader2, ArrowRight, HeartPulse } from 'lucide-react';
+import axios from 'axios';
+import { Mail, Lock, LogIn, AlertCircle, Loader2, ArrowRight, HeartPulse, CheckCircle2, Send } from 'lucide-react';
 
 const Login = () => {
+  const [isForgotMode, setIsForgotMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -14,19 +17,25 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
-      const user = await login(email, password);
-      if (user.role === 'admin') {
-        navigate('/admin');
-      } else if (user.role === 'doctor') {
-        navigate('/doctor');
+      if (isForgotMode) {
+        const res = await axios.post('http://localhost:5000/api/auth/forgot-password', { email });
+        setSuccess(res.data.message);
       } else {
-        navigate('/profile');
+        const user = await login(email, password);
+        if (user.role === 'admin') {
+          navigate('/admin');
+        } else if (user.role === 'doctor') {
+          navigate('/doctor');
+        } else {
+          navigate('/profile');
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to login. Please check your credentials.');
+      setError(err.response?.data?.message || 'Action failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -52,10 +61,12 @@ const Login = () => {
 
            <div className="relative z-10 space-y-6">
               <h2 className="text-5xl font-black text-white leading-[1.1] tracking-tighter italic">
-                Reclaim your <span className="text-blue-400">Equilibrium.</span>
+                {isForgotMode ? "Secure Access Recovery." : "Reclaim your Equilibrium."}
               </h2>
               <p className="text-blue-100/70 font-medium text-lg leading-relaxed max-w-sm">
-                Log in to access your clinical dashboard, view session history, and track your daily emotional growth.
+                {isForgotMode 
+                  ? "Enter your registered email and we'll help you regain access to your clinical ecosystem."
+                  : "Log in to access your clinical dashboard, view session history, and track your daily emotional growth."}
               </p>
            </div>
 
@@ -68,14 +79,25 @@ const Login = () => {
         <div className="p-12 md:p-16 flex flex-col justify-center">
             <div className="max-w-md mx-auto w-full">
                 <div className="mb-12">
-                   <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-4">Welcome Back</h1>
-                   <p className="text-slate-500 font-medium">Continue your journey with our network of professionals.</p>
+                   <h1 className="text-4xl font-black text-slate-900 tracking-tighter mb-4">
+                      {isForgotMode ? "Access Recovery" : "Welcome Back"}
+                   </h1>
+                   <p className="text-slate-500 font-medium">
+                      {isForgotMode ? "Verify your identity to proceed." : "Continue your journey with our network of professionals."}
+                   </p>
                 </div>
 
                 {error && (
                   <div className="bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl mb-8 flex items-start animate-in fade-in slide-in-from-top-2">
                     <AlertCircle className="h-5 w-5 text-rose-600 mr-3 shrink-0" />
                     <p className="text-sm text-rose-800 font-bold leading-relaxed">{error}</p>
+                  </div>
+                )}
+
+                {success && (
+                  <div className="bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl mb-8 flex items-start animate-in fade-in slide-in-from-top-2">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 mr-3 shrink-0" />
+                    <p className="text-sm text-emerald-800 font-bold leading-relaxed">{success}</p>
                   </div>
                 )}
 
@@ -93,31 +115,49 @@ const Login = () => {
                           />
                         </div>
 
-                        <div className="relative group">
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                          <input
-                            type="password" required
-                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none font-bold text-sm"
-                            placeholder="••••••••"
-                            value={password} onChange={(e) => setPassword(e.target.value)}
-                          />
-                        </div>
+                        {!isForgotMode && (
+                          <div className="relative group">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            <input
+                              type="password" required
+                              className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none font-bold text-sm"
+                              placeholder="••••••••"
+                              value={password} onChange={(e) => setPassword(e.target.value)}
+                            />
+                          </div>
+                        )}
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <label className="flex items-center space-x-3 cursor-pointer group">
-                      <input type="checkbox" className="w-5 h-5 text-blue-600 rounded-lg border-slate-200" />
-                      <span className="text-slate-500 font-bold text-xs uppercase tracking-widest group-hover:text-slate-800 transition-colors">Remember Session</span>
-                    </label>
-                    <a href="#" className="text-blue-600 font-black text-xs uppercase tracking-widest hover:text-indigo-700 transition-colors">Forgot Access?</a>
+                    {!isForgotMode && (
+                      <label className="flex items-center space-x-3 cursor-pointer group">
+                        <input type="checkbox" className="w-5 h-5 text-blue-600 rounded-lg border-slate-200" />
+                        <span className="text-slate-500 font-bold text-xs uppercase tracking-widest group-hover:text-slate-800 transition-colors">Remember Session</span>
+                      </label>
+                    )}
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setIsForgotMode(!isForgotMode);
+                        setError('');
+                        setSuccess('');
+                      }}
+                      className="text-blue-600 font-black text-xs uppercase tracking-widest hover:text-indigo-700 transition-colors ml-auto"
+                    >
+                      {isForgotMode ? "Back to Login" : "Forgot Access?"}
+                    </button>
                   </div>
 
                   <button
                     type="submit" disabled={loading}
                     className="w-full bg-slate-900 hover:bg-blue-600 text-white font-black py-5 px-6 rounded-2xl shadow-xl shadow-blue-900/10 transition-all flex justify-center items-center group disabled:opacity-70 disabled:cursor-not-allowed uppercase tracking-[0.2em] text-xs"
                   >
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><LogIn className="mr-3 h-5 w-5 group-hover:-translate-x-1 transition-transform" /> Enter MindEezy</>}
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                      isForgotMode 
+                        ? <><Send className="mr-3 h-5 w-5" /> Send Request</> 
+                        : <><LogIn className="mr-3 h-5 w-5 group-hover:-translate-x-1 transition-transform" /> Enter MindEezy</>
+                    )}
                   </button>
                 </form>
 
