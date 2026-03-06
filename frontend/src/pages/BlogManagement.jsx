@@ -51,8 +51,8 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
     try {
       setLoading(true);
       const url = authorId 
-        ? `http://localhost:5000/api/blogs?authorId=${authorId}`
-        : 'http://localhost:5000/api/blogs';
+        ? `http://localhost:5000/api/blogs?authorId=${authorId}&all_statuses=true`
+        : 'http://localhost:5000/api/blogs?all_statuses=true';
       const res = await axios.get(url);
       setBlogs(res.data);
     } catch (err) {
