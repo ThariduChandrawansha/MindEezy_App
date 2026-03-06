@@ -92,7 +92,7 @@ exports.updateProfessionalProfile = async (req, res) => {
   const { 
     qualification, specialty, category, experience_years, 
     license_number, bio, availability, session_fee,
-    bank_account, bank_name, bank_branch, bank_holder_name 
+    bank_account, bank_name, bank_branch, bank_holder_name, license_image_path
   } = req.body;
 
   try {
@@ -103,13 +103,13 @@ exports.updateProfessionalProfile = async (req, res) => {
         `UPDATE professional_details SET 
           qualification = ?, specialty = ?, category = ?, experience_years = ?, 
           license_number = ?, bio = ?, availability = ?, session_fee = ?,
-          bank_account = ?, bank_name = ?, bank_branch = ?, bank_holder_name = ?
+          bank_account = ?, bank_name = ?, bank_branch = ?, bank_holder_name = ?, license_image_path = ?
         WHERE user_id = ?`,
         [
           qualification || null, specialty || null, category || null, experience_years || null, 
           license_number || null, bio || null, availability ? JSON.stringify(availability) : null,
           session_fee || 0.00, bank_account || null, bank_name || null, 
-          bank_branch || null, bank_holder_name || null, userId
+          bank_branch || null, bank_holder_name || null, license_image_path || null, userId
         ]
       );
     } else {
@@ -117,13 +117,13 @@ exports.updateProfessionalProfile = async (req, res) => {
         `INSERT INTO professional_details (
           user_id, qualification, specialty, category, experience_years, 
           license_number, bio, availability, session_fee,
-          bank_account, bank_name, bank_branch, bank_holder_name
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          bank_account, bank_name, bank_branch, bank_holder_name, license_image_path
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId, qualification || null, specialty || null, category || null, experience_years || null, 
           license_number || null, bio || null, availability ? JSON.stringify(availability) : null,
           session_fee || 0.00, bank_account || null, bank_name || null, 
-          bank_branch || null, bank_holder_name || null
+          bank_branch || null, bank_holder_name || null, license_image_path || null
         ]
       );
     }

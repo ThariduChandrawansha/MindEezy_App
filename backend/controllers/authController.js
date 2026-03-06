@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.register = async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, role, license_image_path } = req.body;
 
   try {
     // Check if user exists
@@ -27,11 +27,20 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insert user (role defaults to 'customer')
-    await db.execute(
+    // Insert user
+    const finalRole = role === 'doctor' ? 'doctor' : 'customer';
+    const [userResult] = await db.execute(
       'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-      [username, email, hashedPassword, 'customer']
+      [username, email, hashedPassword, finalRole]
     );
+
+    if (finalRole === 'doctor') {
+      const userId = userResult.insertId;
+      await db.execute(
+        'INSERT INTO professional_details (user_id, license_image_path) VALUES (?, ?)',
+        [userId, license_image_path || null]
+      );
+    }
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {

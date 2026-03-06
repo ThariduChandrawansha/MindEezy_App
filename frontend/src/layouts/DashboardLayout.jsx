@@ -123,10 +123,7 @@ const DashboardLayout = ({ children }) => {
           </button>
 
           <div className="flex items-center space-x-6">
-            <button className="relative p-2.5 bg-slate-50 text-slate-600 rounded-xl hover:bg-slate-100 transition-all">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-rose-500 rounded-full border-2 border-white"></span>
-            </button>
+       
             <div className="h-10 w-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden ring-1 ring-slate-100 italic">
                <img src={`https://ui-avatars.com/api/?name=${user?.username}&background=random`} alt="Avatar" />
             </div>

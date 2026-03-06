@@ -28,8 +28,8 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const register = async (username, email, password) => {
-    await axios.post('http://localhost:5000/api/auth/register', { username, email, password });
+  const register = async (username, email, password, role = 'customer', license_image_path = null) => {
+    await axios.post('http://localhost:5000/api/auth/register', { username, email, password, role, license_image_path });
   };
 
   const logout = () => {

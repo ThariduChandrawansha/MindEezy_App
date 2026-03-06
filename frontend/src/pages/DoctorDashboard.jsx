@@ -424,7 +424,8 @@ const DoctorDashboard = () => {
           bank_account: res.data.bank_account || '',
           bank_name: res.data.bank_name || '',
           bank_branch: res.data.bank_branch || '',
-          bank_holder_name: res.data.bank_holder_name || ''
+          bank_holder_name: res.data.bank_holder_name || '',
+          license_image_path: res.data.license_image_path || ''
         });
       }
     } catch (err) {
@@ -677,6 +678,43 @@ const DoctorDashboard = () => {
                     </div>
                   </div>
 
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">License Image Document</label>
+                    <div className="flex items-center space-x-6">
+                       <div className="h-24 w-40 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex items-center justify-center overflow-hidden">
+                          {profileForm.license_image_path ? (
+                            <img src={`http://localhost:5000${profileForm.license_image_path}`} className="h-full w-full object-cover" alt="License" />
+                          ) : (
+                            <span className="text-xs font-bold text-slate-300 uppercase">No Image</span>
+                          )}
+                       </div>
+                       <div className="space-y-2">
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files[0];
+                              if(!file) return;
+                              const fd = new FormData();
+                              fd.append('image', file);
+                              setIsUploadingImage(true);
+                              try {
+                                const res = await axios.post('http://localhost:5000/api/users/upload', fd, { headers: { 'Content-Type': 'multipart/form-data'}});
+                                setProfileForm({...profileForm, license_image_path: res.data.filePath});
+                                showNotification('success', 'License image uploaded successfully');
+                              } catch(err) {
+                                showNotification('error', 'License image upload failed');
+                              } finally {
+                                setIsUploadingImage(false);
+                              }
+                            }}
+                            className="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
+                          />
+                          <p className="text-[10px] text-slate-400">Upload official medical license image. Max 2MB.</p>
+                       </div>
+                    </div>
+                  </div>
+
                   {/* FINANCIAL DETAILS */}
                   <div className="pt-6 border-t border-slate-100 space-y-6">
                      <h4 className="text-sm font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
@@ -736,6 +774,12 @@ const DoctorDashboard = () => {
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">License No.<span className="text-slate-800 text-base normal-case font-bold">{profDetails?.license_number || '-'}</span></p>
                   </div>
+                  {profDetails?.license_image_path && (
+                    <div className="col-span-1 md:col-span-2 pt-2 pb-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1 mb-2">License Document</p>
+                      <img src={`http://localhost:5000${profDetails.license_image_path}`} className="w-full max-w-sm h-40 object-cover rounded-xl border border-slate-200 shadow-sm" alt="License" />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex flex-col gap-1">Session Fee<span className="text-rose-600 text-base normal-case font-black">LKR {profDetails?.session_fee || '0.00'}</span></p>
                   </div>
