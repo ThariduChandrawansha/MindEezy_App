@@ -13,7 +13,12 @@ import {
   AlertCircle,
   Image as ImageIcon,
   Search,
-  BookOpen
+  BookOpen,
+  Star,
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,6 +32,11 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [formMode, setFormMode] = useState('create');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Comment moderation state (admin only)
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentFilter, setCommentFilter] = useState('pending');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -45,6 +55,7 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
   useEffect(() => {
     fetchBlogs();
     fetchCategories();
+    if (!authorId) fetchAllComments();
   }, []);
 
   const fetchBlogs = async () => {
@@ -67,6 +78,32 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
       const res = await axios.get('http://localhost:5000/api/blogs/categories');
       setCategories(res.data);
     } catch (err) {}
+  };
+
+  const fetchAllComments = async () => {
+    setCommentsLoading(true);
+    try {
+      const res = await axios.get('http://localhost:5000/api/blog-comments/admin/all');
+      setComments(res.data);
+    } catch (err) { console.error(err); }
+    finally { setCommentsLoading(false); }
+  };
+
+  const handleCommentStatusChange = async (commentId, newStatus) => {
+    try {
+      await axios.patch(`http://localhost:5000/api/blog-comments/${commentId}/status`, { status: newStatus });
+      showNotification('success', `Comment ${newStatus}`);
+      fetchAllComments();
+    } catch (err) { showNotification('error', 'Failed to update comment status'); }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm('Delete this comment permanently?')) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/blog-comments/${commentId}`);
+      showNotification('success', 'Comment deleted');
+      fetchAllComments();
+    } catch (err) { showNotification('error', 'Delete failed'); }
   };
 
   const showNotification = (type, message) => {
@@ -370,6 +407,93 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
                </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ===== COMMENT MODERATION (Admin Only) ===== */}
+      {!authorId && (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="p-6 border-b border-slate-100 flex flex-wrap justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-indigo-500" />
+              <h2 className="font-black text-slate-800 text-lg">Reader Review Moderation</h2>
+              {comments.filter(c => c.status === 'pending').length > 0 && (
+                <span className="px-2.5 py-1 bg-amber-100 text-amber-700 font-black text-xs rounded-full">
+                  {comments.filter(c => c.status === 'pending').length} pending
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {['pending', 'approved', 'rejected'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setCommentFilter(s)}
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
+                    commentFilter === s
+                      ? s === 'pending' ? 'bg-amber-500 text-white' : s === 'approved' ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+                      : 'bg-slate-50 text-slate-400 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          {commentsLoading ? (
+            <div className="py-16 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-indigo-500" /></div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {comments.filter(c => c.status === commentFilter).length === 0 ? (
+                <div className="py-16 text-center">
+                  <MessageSquare className="h-10 w-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-slate-400 font-bold text-sm">No {commentFilter} reviews</p>
+                </div>
+              ) : (
+                comments.filter(c => c.status === commentFilter).map(c => (
+                  <div key={c.id} className="p-6 hover:bg-slate-50 transition-colors">
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex-grow">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{c.blog_title}</span>
+                          <div className="flex items-center gap-0.5">
+                            {[1,2,3,4,5].map(s => (
+                              <Star key={s} className={`h-3.5 w-3.5 ${s <= c.rating ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`} />
+                            ))}
+                          </div>
+                        </div>
+                        {c.comment ? (
+                          <p className="text-slate-600 text-sm font-medium italic border-l-4 border-indigo-100 pl-3">"{c.comment}"</p>
+                        ) : (
+                          <p className="text-slate-400 text-xs italic">Rating only — no written comment.</p>
+                        )}
+                        <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase">{new Date(c.created_at).toLocaleString()}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {c.status !== 'approved' && (
+                          <button onClick={() => handleCommentStatusChange(c.id, 'approved')} title="Approve" className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-xl border border-emerald-100 transition-all">
+                            <ThumbsUp className="h-4 w-4" />
+                          </button>
+                        )}
+                        {c.status !== 'rejected' && (
+                          <button onClick={() => handleCommentStatusChange(c.id, 'rejected')} title="Reject" className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl border border-rose-100 transition-all">
+                            <ThumbsDown className="h-4 w-4" />
+                          </button>
+                        )}
+                        {c.status !== 'pending' && (
+                          <button onClick={() => handleCommentStatusChange(c.id, 'pending')} title="Reset to Pending" className="p-2 text-amber-500 hover:bg-amber-50 rounded-xl border border-amber-100 transition-all">
+                            <Clock className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button onClick={() => handleDeleteComment(c.id)} title="Delete" className="p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-500 rounded-xl border border-slate-100 transition-all">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
         </div>
       )}
 
