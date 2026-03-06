@@ -36,7 +36,7 @@ const CustomerProfile = () => {
   const [savingModal, setSavingModal] = useState(false);
   
   const [entryData, setEntryData] = useState({
-    mood_level: 0,
+    mood_level: null,
     note: '',
     entry: ''
   });
@@ -53,13 +53,14 @@ const CustomerProfile = () => {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [cardForm, setCardForm] = useState({ holder: '', number: '', expiry: '', cvc: '' });
 
-  const emojis = [
-    { level: 1, label: 'Awful', icon: '😭', color: 'bg-rose-100 text-rose-600 border-rose-200 hover:bg-rose-200' },
-    { level: 2, label: 'Bad', icon: '😔', color: 'bg-orange-100 text-orange-600 border-orange-200 hover:bg-orange-200' },
-    { level: 3, label: 'Okay', icon: '😐', color: 'bg-amber-100 text-amber-600 border-amber-200 hover:bg-amber-200' },
-    { level: 4, label: 'Good', icon: '🙂', color: 'bg-blue-100 text-blue-600 border-blue-200 hover:bg-blue-200' },
-    { level: 5, label: 'Great', icon: '😁', color: 'bg-emerald-100 text-emerald-600 border-emerald-200 hover:bg-emerald-200' }
-  ];
+const emojis = [
+  { level: 0, label: 'Anger', icon: '😡', color: 'bg-rose-100 text-rose-600 border-rose-200 hover:bg-rose-200' },
+  { level: 1, label: 'Fear', icon: '😨', color: 'bg-purple-100 text-purple-600 border-purple-200 hover:bg-purple-200' },
+  { level: 2, label: 'Joy', icon: '😄', color: 'bg-emerald-100 text-emerald-600 border-emerald-200 hover:bg-emerald-200' },
+  { level: 3, label: 'Love', icon: '🥰', color: 'bg-pink-100 text-pink-600 border-pink-200 hover:bg-pink-200' },
+  { level: 4, label: 'Sadness', icon: '😢', color: 'bg-blue-100 text-blue-600 border-blue-200 hover:bg-blue-200' },
+  { level: 5, label: 'Surprise', icon: '😲', color: 'bg-amber-100 text-amber-600 border-amber-200 hover:bg-amber-200' }
+];
 
   // Profile Completion State
   const [patientDetails, setPatientDetails] = useState(null);
@@ -276,11 +277,15 @@ const CustomerProfile = () => {
     setLoadingModal(true);
     
     // Clear form first
-    setEntryData({ mood_level: 0, note: '', entry: '' });
+    setEntryData({ mood_level: null, note: '', entry: '' });
 
     try {
       const res = await axios.get(`http://localhost:5000/api/journals/${user.id}/date/${dateStr}`);
-      setEntryData(res.data);
+      setEntryData({
+        mood_level: res.data.mood_level !== undefined && res.data.mood_level !== null ? res.data.mood_level : null,
+        note: res.data.note || '',
+        entry: res.data.entry || ''
+      });
     } catch (err) {
       showNotification('error', 'Failed to load daily entry');
     } finally {
@@ -824,7 +829,7 @@ const CustomerProfile = () => {
                             {/* Indicators */}
                             {dayData && (
                                <div className="mt-auto flex flex-col gap-1 w-full justify-center items-center opacity-80 group-hover:opacity-100 transition-opacity">
-                                  {dayData.hasMood && <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-md w-full text-center truncate shadow-sm">Mood: {dayData.mood_level}</span>}
+                                  {dayData.hasMood && <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-md w-full text-center truncate shadow-sm mt-0.5">Mood: {emojis.find(e => e.level == dayData.mood_level)?.label || dayData.mood_level}</span>}
                                   {dayData.hasJournal && <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-md w-full text-center truncate shadow-sm mt-0.5">Written</span>}
                                </div>
                             )}
