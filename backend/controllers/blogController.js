@@ -120,9 +120,23 @@ exports.updateBlog = async (req, res) => {
   const { id } = req.params;
   const { category_id, title, content, image_path_1, image_path_2, image_path_3, status } = req.body;
   try {
+    const fields = [];
+    const values = [];
+
+    if (category_id !== undefined) { fields.push('category_id=?'); values.push(category_id || null); }
+    if (title !== undefined) { fields.push('title=?'); values.push(title); }
+    if (content !== undefined) { fields.push('content=?'); values.push(content); }
+    if (image_path_1 !== undefined) { fields.push('image_path_1=?'); values.push(image_path_1); }
+    if (image_path_2 !== undefined) { fields.push('image_path_2=?'); values.push(image_path_2); }
+    if (image_path_3 !== undefined) { fields.push('image_path_3=?'); values.push(image_path_3); }
+    if (status !== undefined) { fields.push('status=?'); values.push(status); }
+
+    if (fields.length === 0) return res.json({ message: 'No changes provided' });
+
+    values.push(id);
     await db.query(
-      'UPDATE blogs SET category_id=?, title=?, content=?, image_path_1=?, image_path_2=?, image_path_3=?, status=? WHERE id=?',
-      [category_id || null, title, content, image_path_1, image_path_2, image_path_3, status, id]
+      `UPDATE blogs SET ${fields.join(', ')} WHERE id=?`,
+      values
     );
     res.json({ message: 'Blog updated' });
   } catch (err) {
