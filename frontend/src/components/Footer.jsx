@@ -21,14 +21,6 @@ const Footer = () => {
             <p className="text-lg text-slate-400 max-w-md leading-relaxed">
               Making mental health care accessible, professional, and effortless for everyone. Join our community of wellness today.
             </p>
-            <div className="flex space-x-4">
-              <div className="h-10 w-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center hover:bg-blue-600 hover:border-blue-500 transition-all cursor-pointer">
-                <Mail className="h-5 w-5 text-slate-400 hover:text-white" />
-              </div>
-              <div className="h-10 w-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center hover:bg-blue-600 hover:border-blue-500 transition-all cursor-pointer">
-                <Phone className="h-5 w-5 text-slate-400 hover:text-white" />
-              </div>
-            </div>
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-2 lg:grid-cols-3 gap-8">
@@ -60,17 +52,17 @@ const Footer = () => {
 
             <div className="col-span-1">
               <h4 className="text-white font-bold text-lg mb-6">Connect</h4>
-              <div className="bg-slate-800 p-1 rounded-2xl flex border border-slate-700 focus-within:border-blue-500 transition-colors mb-4">
-                <input 
-                  type="email" 
-                  placeholder="Email..." 
-                  className="bg-transparent border-none outline-none px-4 py-2 text-white w-full text-sm"
-                />
-                <button className="bg-blue-600 text-white p-2 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/40">
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="text-xs text-slate-500">Subscribe for mental health tips.</p>
+              <ul className="space-y-4">
+                <li className="flex items-center text-slate-400">
+                  <Mail className="h-4 w-4 mr-3" /> support@mindeezy.com
+                </li>
+                <li className="flex items-center text-slate-400">
+                  <Phone className="h-4 w-4 mr-3" /> +94 112 345 678
+                </li>
+                <li className="flex items-start text-slate-400">
+                  <MapPin className="h-4 w-4 mr-3 mt-1 shrink-0" /> Colombo, Sri Lanka
+                </li>
+              </ul>
             </div>
           </div>
         </div>
