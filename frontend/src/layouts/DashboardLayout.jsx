@@ -15,7 +15,11 @@ import {
   Stethoscope,
   Bell,
   FolderTree,
-  FileText
+  FileText,
+  UserCircle,
+  ClipboardList,
+  Star,
+  Wallet
 } from 'lucide-react';
 
 import MentalHealthChat from '../components/MentalHealthChat';
@@ -33,9 +37,12 @@ const DashboardLayout = ({ children }) => {
 
   const doctorLinks = [
     { name: 'Overview', path: '/doctor', icon: LayoutDashboard },
-    { name: 'Patients', path: '/doctor/patients', icon: Users },
-    { name: 'Schedule', path: '/doctor/schedule', icon: Calendar },
-    { name: 'Settings', path: '/doctor/settings', icon: Settings },
+    { name: 'Schedule', path: '/doctor?tab=appointments', icon: Calendar },
+    { name: 'Professional Bio', path: '/doctor?tab=profile', icon: UserCircle },
+    { name: 'Assessments', path: '/doctor?tab=assessments', icon: ClipboardList },
+    { name: 'Patient Feedback', path: '/doctor?tab=feedbacks', icon: Star },
+    { name: 'My Articles', path: '/doctor?tab=articles', icon: FileText },
+    { name: 'Financials', path: '/doctor?tab=financials', icon: Wallet },
   ];
 
   const adminLinks = [
@@ -70,7 +77,8 @@ const DashboardLayout = ({ children }) => {
 
         <nav className="flex-grow py-8 px-4 space-y-2">
           {links.map((link) => {
-            const isActive = location.pathname === link.path;
+            const isActive = location.pathname + location.search === link.path || 
+              (link.path === '/doctor' && location.pathname === '/doctor' && !location.search);
             return (
               <Link
                 key={link.path}

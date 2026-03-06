@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { format, parseISO, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, subMonths, addMonths, isSameDay } from 'date-fns';
 import { 
@@ -306,7 +307,10 @@ const PatientProgressModal = ({ isOpen, onClose, patient, doctorId }) => {
 
 const DoctorDashboard = () => {
   const { user, updateUser } = useAuth();
-  const [activeTab, setActiveTab] = useState('appointments'); // 'appointments' or 'profile'
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'appointments');
   const [notification, setNotification] = useState(null);
   
   // Doctor Profile State
@@ -342,6 +346,13 @@ const DoctorDashboard = () => {
 
   // Feedbacks State
   const [feedbacks, setFeedbacks] = useState([]);
+
+  // Sync activeTab with URL changes (sidebar clicks)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab && tab !== activeTab) setActiveTab(tab);
+  }, [location.search]);
 
   useEffect(() => {
     if (user) {
@@ -584,57 +595,9 @@ const DoctorDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Navigation Sidebar */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 sticky top-8">
-            <h3 className="text-slate-400 font-black uppercase text-[10px] tracking-[0.2em] mb-4 p-2">Workspace</h3>
-            <nav className="space-y-2">
-              <button 
-                onClick={() => setActiveTab('appointments')}
-                className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold transition-all ${activeTab === 'appointments' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
-              >
-                <div className="flex items-center space-x-3"><CalendarIcon className="h-5 w-5" /> <span>Schedule</span></div>
-              </button>
-              <button 
-                onClick={() => setActiveTab('profile')}
-                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'profile' ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
-              >
-                <UserCircle className="h-5 w-5" /> <span>Professional Bio</span>
-              </button>
-              <button className="w-full flex items-center space-x-3 p-4 text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all font-bold">
-                <HeartPulse className="h-5 w-5" /> <span>Patient Cases</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('assessments')}
-                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'assessments' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
-              >
-                <ClipboardList className="h-5 w-5" /> <span>Assessments</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('feedbacks')}
-                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'feedbacks' ? 'bg-amber-500 text-white shadow-lg shadow-amber-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
-              >
-                <Star className="h-5 w-5" /> <span>Patient Feedback</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('articles')}
-                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'articles' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
-              >
-                <FileText className="h-5 w-5" /> <span>My Articles</span>
-              </button>
-              <button 
-                onClick={() => setActiveTab('financials')}
-                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'financials' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
-              >
-                <Wallet className="h-5 w-5" /> <span>Financials</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-
+      <div className="space-y-6">
         {/* View Area */}
-        <div className="md:col-span-3 space-y-6">
+        <div className="space-y-6">
           
           {/* TAB: PROFILE */}
           {activeTab === 'profile' && (
