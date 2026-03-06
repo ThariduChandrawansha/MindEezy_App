@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, UserCog, Activity, Settings, Filter, Download, Plus, Banknote, Landmark, PieChart, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, UserCog, Activity, Settings, Filter, Download, Plus, Banknote, Landmark, PieChart, TrendingUp, Clock, CheckCircle2, BookOpen } from 'lucide-react';
+import BlogManagement from './BlogManagement';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -214,6 +215,20 @@ const AdminDashboard = () => {
               </tbody>
            </table>
         </div>
+      </div>
+
+      {/* Article Review Section */}
+      <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden p-8">
+         <div className="flex items-center gap-4 mb-6">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+               <BookOpen className="h-5 w-5" />
+            </div>
+            <div>
+               <h3 className="text-xl font-black text-slate-800 tracking-tight">Editorial Review</h3>
+               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Medical Articles & Publications</p>
+            </div>
+         </div>
+         <BlogManagement isEmbedded={true} />
       </div>
     </div>
   );

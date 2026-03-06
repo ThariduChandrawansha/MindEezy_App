@@ -107,6 +107,16 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
     }
   };
 
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await axios.put(`http://localhost:5000/api/blogs/${id}`, { status: newStatus });
+      showNotification('success', `Article set to ${newStatus}`);
+      fetchBlogs();
+    } catch (err) {
+      showNotification('error', 'Status update failed');
+    }
+  };
+
   const handleDelete = async (id) => {
     if (window.confirm('Delete this blog post?')) {
       try {
@@ -202,8 +212,12 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
                     <div className="text-[10px] text-blue-600 font-bold uppercase">{blog.category_name || 'Uncategorized'}</div>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600 font-medium">{blog.author_name}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${blog.status === 'published' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                   <td className="px-6 py-4">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      blog.status === 'published' ? 'bg-emerald-100 text-emerald-600' : 
+                      blog.status === 'pending' ? 'bg-indigo-100 text-indigo-600' : 
+                      'bg-amber-100 text-amber-600'
+                    }`}>
                       {blog.status}
                     </span>
                   </td>
@@ -212,6 +226,15 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end space-x-2">
+                       {user?.role === 'admin' && blog.status === 'pending' && (
+                         <button 
+                            onClick={() => handleStatusChange(blog.id, 'published')}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-1 font-bold text-[10px] uppercase"
+                            title="Approve & Publish"
+                         >
+                            <CheckCircle2 className="h-4 w-4"/> Approve
+                         </button>
+                       )}
                        <button onClick={() => handleOpenView(blog)} className="p-1.5 text-slate-400 hover:text-blue-600"><Eye className="h-4 w-4"/></button>
                        <button onClick={() => handleOpenEdit(blog)} className="p-1.5 text-slate-400 hover:text-amber-600"><Edit className="h-4 w-4"/></button>
                        <button onClick={() => handleDelete(blog.id)} className="p-1.5 text-slate-400 hover:text-rose-600"><Trash2 className="h-4 w-4"/></button>
@@ -295,17 +318,18 @@ const BlogManagement = ({ authorId = null, isEmbedded = false }) => {
                  ))}
               </div>
 
-              <div className="flex items-center space-x-4 pt-6">
-                 <label className="text-sm font-bold text-slate-700">Publish immediately?</label>
-                 <select 
-                    className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black uppercase tracking-widest"
-                    value={formData.status}
-                    onChange={e => setFormData({...formData, status: e.target.value})}
-                 >
-                   <option value="draft">No, Draft</option>
-                   <option value="published">Yes, Publish</option>
-                 </select>
-              </div>
+               <div className="flex items-center space-x-4 pt-6">
+                  <label className="text-sm font-bold text-slate-700">Submission Status</label>
+                  <select 
+                     className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-black uppercase tracking-widest"
+                     value={formData.status}
+                     onChange={e => setFormData({...formData, status: e.target.value})}
+                  >
+                    <option value="draft">Save as Draft</option>
+                    <option value="pending">Submit for Review</option>
+                    {user?.role === 'admin' && <option value="published">Direct Publish</option>}
+                  </select>
+               </div>
 
               <div className="flex justify-end space-x-3 pt-6 bg-white sticky bottom-0 py-4">
                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-all">Discard</button>
