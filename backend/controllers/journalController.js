@@ -118,3 +118,111 @@ exports.saveDayEntry = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+// FOR PROFESSIONALS: Get patient overview if appointment exists
+exports.getPatientMonthOverview = async (req, res) => {
+  const { patientId, doctorId } = req.params;
+  const { year, month } = req.query;
+
+  try {
+    // Verify appointment exists
+    const [appts] = await db.query(
+      "SELECT id FROM appointments WHERE user_id = ? AND professional_id = ? AND status != 'cancelled'",
+      [patientId, doctorId]
+    );
+
+    if (appts.length === 0) {
+      return res.status(403).json({ message: "No active appointment found with this patient." });
+    }
+
+    const startDate = `${year}-${month}-01`;
+    const endDate = `${year}-${month}-31`;
+
+    const [moods] = await db.query(
+      `SELECT mood_date as date, mood_level, note FROM moods 
+       WHERE user_id = ? AND mood_date >= ? AND mood_date <= ?`,
+      [patientId, startDate, endDate]
+    );
+
+    const [journals] = await db.query(
+      `SELECT journal_date as date, 1 as hasContent FROM journals 
+       WHERE user_id = ? AND journal_date >= ? AND journal_date <= ?`,
+      [patientId, startDate, endDate]
+    );
+
+    const mergedData = {};
+    moods.forEach(m => {
+      const d = new Date(m.date);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      mergedData[dateStr] = { ...mergedData[dateStr], mood_level: m.mood_level, hasMood: !!m.mood_level };
+    });
+
+    journals.forEach(j => {
+      const d = new Date(j.date);
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      mergedData[dateStr] = { ...mergedData[dateStr], hasJournal: true };
+    });
+
+    res.json(mergedData);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// FOR PROFESSIONALS: Get patient day entry
+exports.getPatientDayEntry = async (req, res) => {
+  const { patientId, doctorId, date } = req.params;
+
+  try {
+    const [appts] = await db.query(
+      "SELECT id FROM appointments WHERE user_id = ? AND professional_id = ? AND status != 'cancelled'",
+      [patientId, doctorId]
+    );
+
+    if (appts.length === 0) {
+      return res.status(403).json({ message: "No active appointment found with this patient." });
+    }
+
+    const [moodData] = await db.query(
+      'SELECT mood_level, note FROM moods WHERE user_id = ? AND mood_date = ?',
+      [patientId, date]
+    );
+
+    const [journalData] = await db.query(
+      'SELECT entry FROM journals WHERE user_id = ? AND journal_date = ?',
+      [patientId, date]
+    );
+
+    res.json({
+      mood_level: moodData[0]?.mood_level || 0,
+      note: moodData[0]?.note || '',
+      entry: journalData[0]?.entry || ''
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// FOR PROFESSIONALS: Get all patient entries for AI analysis
+exports.getPatientAllEntries = async (req, res) => {
+  const { patientId, doctorId } = req.params;
+
+  try {
+    const [appts] = await db.query(
+      "SELECT id FROM appointments WHERE user_id = ? AND professional_id = ? AND status != 'cancelled'",
+      [patientId, doctorId]
+    );
+
+    if (appts.length === 0) {
+      return res.status(403).json({ message: "No active appointment found with this patient." });
+    }
+
+    const [journals] = await db.query(
+      'SELECT journal_date, entry FROM journals WHERE user_id = ? ORDER BY journal_date DESC LIMIT 50',
+      [patientId]
+    );
+
+    res.json(journals);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
