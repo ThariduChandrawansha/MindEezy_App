@@ -22,6 +22,7 @@ const CustomerProfile = () => {
 
   // Journaling & Calendar State
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isEditable, setIsEditable] = useState(false);
   const [monthData, setMonthData] = useState({});
   const [loadingCalendar, setLoadingCalendar] = useState(false);
   const [mentalSummary, setMentalSummary] = useState(null);
@@ -267,6 +268,10 @@ const CustomerProfile = () => {
 
   const handleDateClick = async (dateStr) => {
     setSelectedDate(dateStr);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const isPastOrToday = dateStr <= todayStr;
+    setIsEditable(isPastOrToday);
+    
     setIsModalOpen(true);
     setLoadingModal(true);
     
@@ -993,8 +998,15 @@ const CustomerProfile = () => {
                            <button 
                              key={e.level}
                              type="button"
+                             disabled={!isEditable}
                              onClick={() => setEntryData({...entryData, mood_level: e.level})}
-                             className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${entryData.mood_level === e.level ? `scale-110 shadow-lg ${e.color}` : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100 grayscale hover:grayscale-0'}`}
+                             className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${
+                               entryData.mood_level === e.level 
+                                 ? `scale-110 shadow-lg ${e.color}` 
+                                 : !isEditable 
+                                   ? 'bg-slate-50 border-slate-100 text-slate-300 opacity-20 pointer-events-none' 
+                                   : 'bg-slate-50 border-slate-100 text-slate-400 hover:bg-slate-100 grayscale hover:grayscale-0'
+                             }`}
                            >
                              <span className="text-4xl mb-2 filter drop-shadow-sm">{e.icon}</span>
                              <span className="text-[10px] font-bold uppercase tracking-widest">{e.label}</span>
@@ -1007,8 +1019,9 @@ const CustomerProfile = () => {
                           <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center ml-2"><MessageCircle className="h-3 w-3 mr-2 text-rose-400"/> Mood Notes</label>
                           <input 
                              type="text"
-                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300 transition-all font-medium text-slate-700 placeholder:text-slate-300"
-                             placeholder="Briefly describe your current state (e.g. 'Feeling a bit anxious', 'Excited for today')..."
+                             readOnly={!isEditable}
+                             className={`w-full px-6 py-4 border rounded-2xl outline-none transition-all font-medium text-slate-700 placeholder:text-slate-300 ${!isEditable ? 'bg-slate-100 border-slate-100 italic' : 'bg-slate-50 border-slate-100 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300'}`}
+                             placeholder={isEditable ? "Briefly describe your current state..." : "No mood notes for this day."}
                              value={entryData.note}
                              onChange={e => setEntryData({...entryData, note: e.target.value})}
                           />
@@ -1019,8 +1032,9 @@ const CustomerProfile = () => {
                     <div className="space-y-4">
                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-[0.2em] flex items-center ml-2"><Book className="h-4 w-4 mr-2 text-indigo-400"/> Personal Journal</h4>
                        <textarea 
-                         className="w-full p-6 bg-white border border-slate-200 rounded-3xl outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all font-medium text-slate-700 min-h-[250px] shadow-inner text-lg leading-relaxed resize-y placeholder:text-slate-300"
-                         placeholder="Start writing your thoughts for the day..."
+                         readOnly={!isEditable}
+                         className={`w-full p-6 border rounded-3xl outline-none transition-all font-medium text-slate-700 min-h-[250px] shadow-inner text-lg leading-relaxed resize-y placeholder:text-slate-300 ${!isEditable ? 'bg-slate-50 border-slate-100 italic' : 'bg-white border-slate-200 focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-400'}`}
+                         placeholder={isEditable ? "Start writing your thoughts for the day..." : "No journal entry for this day."}
                          value={entryData.entry}
                          onChange={e => setEntryData({...entryData, entry: e.target.value})}
                        ></textarea>
@@ -1031,17 +1045,21 @@ const CustomerProfile = () => {
                 )}
              </div>
 
-             <div className="p-6 border-t border-slate-100 bg-white sticky bottom-0 z-10 flex justify-end space-x-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">Cancel</button>
-                <button 
-                  type="submit" 
-                  form="journal-form"
-                  disabled={savingModal || loadingModal}
-                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-xl shadow-indigo-200 transition-all flex items-center tracking-widest uppercase text-xs"
-                >
-                  {savingModal ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                  Save Reflection
+             <div className={`p-6 border-t border-slate-100 bg-white sticky bottom-0 z-10 flex ${isEditable ? 'justify-end' : 'justify-center'} space-x-3`}>
+                <button type="button" onClick={() => setIsModalOpen(false)} className={`px-10 py-3 font-black rounded-xl transition-all uppercase tracking-widest text-xs ${isEditable ? 'text-slate-500 hover:bg-slate-50' : 'bg-slate-900 text-white shadow-xl hover:bg-slate-800'}`}>
+                  {isEditable ? 'Cancel' : 'Done Reading'}
                 </button>
+                {isEditable && (
+                  <button 
+                    type="submit" 
+                    form="journal-form"
+                    disabled={savingModal || loadingModal}
+                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-xl shadow-indigo-200 transition-all flex items-center tracking-widest uppercase text-xs"
+                  >
+                    {savingModal ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                    Save Reflection
+                  </button>
+                )}
              </div>
            </div>
         </div>

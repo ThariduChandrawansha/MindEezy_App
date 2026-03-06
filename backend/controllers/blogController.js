@@ -58,10 +58,23 @@ exports.getBlogs = async (req, res) => {
       JOIN users u ON b.author_id = u.id
     `;
     let params = [];
+    let conditions = [];
     
     if (authorId) {
-      query += ' WHERE b.author_id = ?';
+      conditions.push('b.author_id = ?');
       params.push(authorId);
+    }
+
+    if (req.query.status) {
+      conditions.push('b.status = ?');
+      params.push(req.query.status);
+    } else if (!authorId) {
+      // If no author filter and no status filter, default to only published (Public View)
+      conditions.push("b.status = 'published'");
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
     
     query += ' ORDER BY b.publish_date DESC';
@@ -95,7 +108,7 @@ exports.createBlog = async (req, res) => {
   try {
     const [result] = await db.query(
       'INSERT INTO blogs (category_id, author_id, title, content, image_path_1, image_path_2, image_path_3, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [category_id || null, author_id, title, content, image_path_1, image_path_2, image_path_3, status || 'draft']
+      [category_id || null, author_id, title, content, image_path_1, image_path_2, image_path_3, status || 'pending']
     );
     res.json({ id: result.insertId, message: 'Blog created' });
   } catch (err) {
