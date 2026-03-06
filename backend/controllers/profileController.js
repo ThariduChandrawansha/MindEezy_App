@@ -15,7 +15,7 @@ exports.getPatientProfile = async (req, res) => {
 
 exports.updatePatientProfile = async (req, res) => {
   const { userId } = req.params;
-  const { age, gender, address, phone, medical_history, stress_triggers, profile_pic_path } = req.body;
+  const { age, gender, address, phone, medical_history, stress_triggers, profile_pic_path, marital_status, employment_status } = req.body;
 
   try {
     // Check if profile exists
@@ -26,16 +26,17 @@ exports.updatePatientProfile = async (req, res) => {
       await db.query(
         `UPDATE patient_details SET 
           age = ?, gender = ?, address = ?, phone = ?, 
-          medical_history = ?, stress_triggers = ?, profile_pic_path = ?
+          medical_history = ?, stress_triggers = ?, profile_pic_path = ?,
+          marital_status = ?, employment_status = ?
         WHERE user_id = ?`,
-        [age || null, gender || null, address || null, phone || null, medical_history || null, stress_triggers || null, profile_pic_path || null, userId]
+        [age || null, gender || null, address || null, phone || null, medical_history || null, stress_triggers || null, profile_pic_path || null, marital_status || null, employment_status || null, userId]
       );
     } else {
       // Insert
       await db.query(
-        `INSERT INTO patient_details (user_id, age, gender, address, phone, medical_history, stress_triggers, profile_pic_path)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [userId, age || null, gender || null, address || null, phone || null, medical_history || null, stress_triggers || null, profile_pic_path || null]
+        `INSERT INTO patient_details (user_id, age, gender, address, phone, medical_history, stress_triggers, profile_pic_path, marital_status, employment_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [userId, age || null, gender || null, address || null, phone || null, medical_history || null, stress_triggers || null, profile_pic_path || null, marital_status || null, employment_status || null]
       );
     }
     

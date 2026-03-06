@@ -30,8 +30,8 @@ exports.createUser = async (req, res) => {
     // Based on role, insert into details tables
     if (role === 'customer') {
       await connection.execute(
-        'INSERT INTO patient_details (user_id, age, gender, address, phone, medical_history, stress_triggers, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [userId, profileData.age || null, profileData.gender || null, profileData.address || '', profileData.phone || '', profileData.medical_history || '', profileData.stress_triggers || '', profileData.profile_pic_path || '']
+        'INSERT INTO patient_details (user_id, age, gender, address, phone, medical_history, stress_triggers, profile_pic_path, marital_status, employment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [userId, profileData.age || null, profileData.gender || null, profileData.address || '', profileData.phone || '', profileData.medical_history || '', profileData.stress_triggers || '', profileData.profile_pic_path || '', profileData.marital_status || null, profileData.employment_status || null]
       );
     } else if (role === 'doctor' || role === 'professional') {
       await connection.execute(
@@ -108,8 +108,8 @@ exports.updateUser = async (req, res) => {
 
     if (role === 'customer') {
       await connection.execute(
-        'INSERT INTO patient_details (user_id, age, gender, address, phone, medical_history, stress_triggers, profile_pic_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE age=?, gender=?, address=?, phone=?, medical_history=?, stress_triggers=?, profile_pic_path=?',
-        [id, profileData.age, profileData.gender, profileData.address, profileData.phone, profileData.medical_history, profileData.stress_triggers, profileData.profile_pic_path, profileData.age, profileData.gender, profileData.address, profileData.phone, profileData.medical_history, profileData.stress_triggers, profileData.profile_pic_path]
+        'INSERT INTO patient_details (user_id, age, gender, address, phone, medical_history, stress_triggers, profile_pic_path, marital_status, employment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE age=?, gender=?, address=?, phone=?, medical_history=?, stress_triggers=?, profile_pic_path=?, marital_status=?, employment_status=?',
+        [id, profileData.age, profileData.gender, profileData.address, profileData.phone, profileData.medical_history, profileData.stress_triggers, profileData.profile_pic_path, profileData.marital_status, profileData.employment_status, profileData.age, profileData.gender, profileData.address, profileData.phone, profileData.medical_history, profileData.stress_triggers, profileData.profile_pic_path, profileData.marital_status, profileData.employment_status]
       );
     } else if (role === 'doctor' || role === 'professional') {
       await connection.execute(

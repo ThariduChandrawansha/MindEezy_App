@@ -22,16 +22,27 @@ const PatientProgressModal = ({ isOpen, onClose, patient, doctorId }) => {
   // AI Summary State
   const [mentalSummary, setMentalSummary] = useState(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [patientBio, setPatientBio] = useState(null);
 
   useEffect(() => {
     if (isOpen && patient) {
       fetchMonthData(currentDate);
       fetchMentalSummary();
+      fetchPatientBio();
       // Auto-select today
       const todayStr = format(new Date(), 'yyyy-MM-dd');
       handleDateClick(todayStr);
     }
   }, [isOpen, currentDate, patient]);
+
+  const fetchPatientBio = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/users/${patient.user_id}`);
+      setPatientBio(res.data.profile);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchMonthData = async (date) => {
     setLoading(true);
@@ -151,6 +162,26 @@ const PatientProgressModal = ({ isOpen, onClose, patient, doctorId }) => {
              </div>
           </div>
 
+          {/* BIO DETAILS ROW */}
+          <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+             <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Bio Details</p>
+                <p className="text-sm font-bold text-slate-800">{patientBio?.age || '?'} Yrs • <span className="capitalize">{patientBio?.gender || 'Unknown'}</span></p>
+             </div>
+             <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Marital Status</p>
+                <p className="text-sm font-bold text-slate-800">{patientBio?.marital_status || 'Not set'}</p>
+             </div>
+             <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Employment</p>
+                <p className="text-sm font-bold text-slate-800">{patientBio?.employment_status || 'Not set'}</p>
+             </div>
+             <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm text-center flex flex-col justify-center">
+                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Journal Activity</p>
+                <p className="text-sm font-bold text-slate-800">High Consistency</p>
+             </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Calendar Side */}
             <div className="space-y-6">
@@ -212,24 +243,48 @@ const PatientProgressModal = ({ isOpen, onClose, patient, doctorId }) => {
                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{format(parseISO(selectedDate), 'yyyy')}</p>
                      </div>
                      {entryData?.mood_level > 0 && (
-                       <div className="px-4 py-2 bg-white text-emerald-800 rounded-2xl font-black text-xs uppercase tracking-widest border border-slate-200 shadow-sm flex items-center gap-2">
-                         <span className="text-xl">📊</span> Wellness Score: {entryData.mood_level}/5
+                       <div className={`px-4 py-2 border rounded-2xl font-black text-xs uppercase tracking-widest shadow-sm flex items-center gap-2 ${
+                         entryData.mood_level <= 1.5 ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                         entryData.mood_level <= 2.5 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                         entryData.mood_level <= 3.5 ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                         entryData.mood_level <= 4.5 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                         'bg-teal-50 text-teal-800 border-teal-200'
+                       }`}>
+                         <span className="text-xl">📊</span> Wellness Score: {
+                           entryData.mood_level <= 1.5 ? 'Very Low' : 
+                           entryData.mood_level <= 2.5 ? 'Low' : 
+                           entryData.mood_level <= 3.5 ? 'Moderate' : 
+                           entryData.mood_level <= 4.5 ? 'Positive' : 'Excellent'
+                         } ({entryData.mood_level}/5)
                        </div>
                      )}
                   </div>
 
                   <div className="space-y-6">
                     <div className="group">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3 pl-2 group-hover:text-amber-500 transition-colors">Patient Mood Notes</label>
+                      <div className="flex justify-between items-center mb-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pl-2 group-hover:text-amber-500 transition-colors">Patient Mood Notes</label>
+                        {entryData?.sentiment_score !== null && (
+                           <span className="text-[9px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                              AI Sentiment: {entryData.sentiment_score}
+                           </span>
+                        )}
+                      </div>
                       <div className="p-5 bg-white rounded-3xl border border-slate-100 text-sm font-bold text-slate-600 leading-relaxed italic shadow-sm group-hover:shadow-md transition-all">
                         {entryData?.note ? `"${entryData.note}"` : "Patient recorded a mood level but did not provide supplementary notes for this day."}
                       </div>
+                      {entryData?.note_created_at && (
+                         <p className="text-[9px] font-bold text-slate-300 mt-2 pl-2">Logged at: {format(parseISO(entryData.note_created_at), 'hh:mm a')}</p>
+                      )}
                     </div>
                     <div className="group">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-3 pl-2 group-hover:text-emerald-500 transition-colors">Daily Journal Record</label>
                       <div className="p-8 bg-white rounded-[32px] border border-slate-100 text-sm font-bold text-slate-800 leading-relaxed whitespace-pre-line shadow-sm min-h-[250px] group-hover:shadow-md transition-all">
                         {entryData?.entry || "No journal entry was logged for this date. The patient may have focused on mood tracking only."}
                       </div>
+                      {entryData?.entry_updated_at && (
+                         <p className="text-[9px] font-bold text-slate-300 mt-2 pl-2">Last Modified: {format(parseISO(entryData.entry_updated_at), 'MMM d, hh:mm a')}</p>
+                      )}
                     </div>
                   </div>
                 </div>

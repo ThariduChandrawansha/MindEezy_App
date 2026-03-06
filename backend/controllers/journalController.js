@@ -25,15 +25,15 @@ exports.getMonthOverview = async (req, res) => {
     const mergedData = {};
     
     moods.forEach(m => {
-      // Create local date string (YYYY-MM-DD) bypassing timezone shift
       const d = new Date(m.date);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      // toLocaleDateString('en-CA') returns YYYY-MM-DD in local time
+      const dateStr = d.toLocaleDateString('en-CA');
       mergedData[dateStr] = { ...mergedData[dateStr], mood_level: m.mood_level, hasMood: !!m.mood_level };
     });
 
     journals.forEach(j => {
       const d = new Date(j.date);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dateStr = d.toLocaleDateString('en-CA');
       mergedData[dateStr] = { ...mergedData[dateStr], hasJournal: true };
     });
 
@@ -65,19 +65,22 @@ exports.getDayEntry = async (req, res) => {
 
   try {
     const [moodData] = await db.query(
-      'SELECT mood_level, note FROM moods WHERE user_id = ? AND mood_date = ?',
+      'SELECT mood_level, note, sentiment_score, created_at FROM moods WHERE user_id = ? AND mood_date = ?',
       [userId, date]
     );
 
     const [journalData] = await db.query(
-      'SELECT entry FROM journals WHERE user_id = ? AND journal_date = ?',
+      'SELECT entry, updated_at FROM journals WHERE user_id = ? AND journal_date = ?',
       [userId, date]
     );
 
     res.json({
       mood_level: moodData[0]?.mood_level || 0,
       note: moodData[0]?.note || '',
-      entry: journalData[0]?.entry || ''
+      sentiment_score: moodData[0]?.sentiment_score || null,
+      note_created_at: moodData[0]?.created_at || null,
+      entry: journalData[0]?.entry || '',
+      entry_updated_at: journalData[0]?.updated_at || null
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -152,13 +155,13 @@ exports.getPatientMonthOverview = async (req, res) => {
     const mergedData = {};
     moods.forEach(m => {
       const d = new Date(m.date);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dateStr = d.toLocaleDateString('en-CA');
       mergedData[dateStr] = { ...mergedData[dateStr], mood_level: m.mood_level, hasMood: !!m.mood_level };
     });
 
     journals.forEach(j => {
       const d = new Date(j.date);
-      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const dateStr = d.toLocaleDateString('en-CA');
       mergedData[dateStr] = { ...mergedData[dateStr], hasJournal: true };
     });
 
@@ -183,19 +186,22 @@ exports.getPatientDayEntry = async (req, res) => {
     }
 
     const [moodData] = await db.query(
-      'SELECT mood_level, note FROM moods WHERE user_id = ? AND mood_date = ?',
+      'SELECT mood_level, note, sentiment_score, created_at FROM moods WHERE user_id = ? AND mood_date = ?',
       [patientId, date]
     );
 
     const [journalData] = await db.query(
-      'SELECT entry FROM journals WHERE user_id = ? AND journal_date = ?',
+      'SELECT entry, updated_at FROM journals WHERE user_id = ? AND journal_date = ?',
       [patientId, date]
     );
 
     res.json({
       mood_level: moodData[0]?.mood_level || 0,
       note: moodData[0]?.note || '',
-      entry: journalData[0]?.entry || ''
+      sentiment_score: moodData[0]?.sentiment_score || null,
+      note_created_at: moodData[0]?.created_at || null,
+      entry: journalData[0]?.entry || '',
+      entry_updated_at: journalData[0]?.updated_at || null
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
