@@ -16,9 +16,15 @@ exports.createAppointment = async (req, res) => {
   const { userId, professionalId, appointmentDatetime, notes } = req.body;
 
   try {
+    // Fetch professional's session fee
+    const [prof] = await db.query('SELECT session_fee FROM professional_details WHERE user_id = ?', [professionalId]);
+    const amount = prof[0]?.session_fee || 0.00;
+    const system_fee = amount * 0.20;
+    const doctor_earning = amount * 0.80;
+
     const [result] = await db.query(
-      'INSERT INTO appointments (user_id, professional_id, appointment_datetime, notes) VALUES (?, ?, ?, ?)',
-      [userId, professionalId, appointmentDatetime, notes || '']
+      'INSERT INTO appointments (user_id, professional_id, appointment_datetime, notes, amount, system_fee, doctor_earning) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, professionalId, appointmentDatetime, notes || '', amount, system_fee, doctor_earning]
     );
     res.json({ id: result.insertId, message: 'Appointment requested successfully' });
   } catch (err) {
@@ -39,7 +45,7 @@ exports.getAppointments = async (req, res) => {
     if (role === 'customer') {
       // Customer sees the doctor info
       query = `
-        SELECT a.*, u.username as professional_name, pd.specialty, pd.profile_pic_path
+        SELECT a.*, u.username as professional_name, pd.specialty, pd.profile_pic_path, pd.session_fee
         FROM appointments a
         JOIN users u ON a.professional_id = u.id
         LEFT JOIN professional_details pd ON u.id = pd.user_id
@@ -118,7 +124,7 @@ exports.getProfessionals = async (req, res) => {
   const { category } = req.query;
   try {
     let query = `
-      SELECT u.id, u.username, pd.specialty, pd.category, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio,
+      SELECT u.id, u.username, pd.specialty, pd.category, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio, pd.session_fee,
              (SELECT COUNT(*) FROM appointments a WHERE a.professional_id = u.id AND a.status != 'cancelled') as total_channelings,
              (SELECT AVG(rating) FROM feedbacks f WHERE f.doctor_id = u.id) as avg_rating,
              (SELECT COUNT(*) FROM feedbacks f WHERE f.doctor_id = u.id) as review_count
@@ -145,7 +151,7 @@ exports.getProfessionalById = async (req, res) => {
   const { id } = req.params;
   try {
     const query = `
-      SELECT u.id, u.username, pd.specialty, pd.category, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio, pd.license_number, pd.online_available,
+      SELECT u.id, u.username, pd.specialty, pd.category, pd.profile_pic_path, pd.qualification, pd.experience_years, pd.bio, pd.license_number, pd.online_available, pd.session_fee,
              (SELECT COUNT(*) FROM appointments a WHERE a.professional_id = u.id AND a.status != 'cancelled') as total_channelings,
              (SELECT AVG(rating) FROM feedbacks f WHERE f.doctor_id = u.id) as avg_rating,
              (SELECT COUNT(*) FROM feedbacks f WHERE f.doctor_id = u.id) as review_count

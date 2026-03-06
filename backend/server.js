@@ -28,6 +28,7 @@ const publicRoutes = require('./routes/publicRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const assessmentRoutes = require('./routes/assessmentRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -37,6 +38,7 @@ app.use('/api/public', publicRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.get('/', (req, res) => {
   res.send('Psychology Care API is running...');

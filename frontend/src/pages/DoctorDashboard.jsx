@@ -6,7 +6,8 @@ import {
   User, Calendar as CalendarIcon, Clock, CheckCircle2, 
   X, AlertCircle, Camera, Loader2, HeartPulse, UserCircle,
   ClipboardList, Plus, Search, HelpCircle, Trash2, Video, Star,
-  FileText, ChevronLeft, ChevronRight, Book
+  FileText, ChevronLeft, ChevronRight, Book,
+  Wallet, Banknote, CreditCard, ArrowDownCircle, PieChart, Landmark
 } from 'lucide-react';
 import VideoConsultRoom from '../components/VideoConsultRoom';
 import BlogManagement from './BlogManagement';
@@ -312,9 +313,16 @@ const DoctorDashboard = () => {
   const [profDetails, setProfDetails] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    qualification: '', specialty: '', category: '', experience_years: '', license_number: '', bio: ''
+    qualification: '', specialty: '', category: '', experience_years: '', license_number: '', bio: '',
+    session_fee: 0, bank_account: '', bank_name: '', bank_branch: '', bank_holder_name: ''
   });
   const [savingProfile, setSavingProfile] = useState(false);
+
+  // Financial State
+  const [earningsStats, setEarningsStats] = useState({ total_earned: 0, available_balance: 0, total_withdrawn: 0 });
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Appointments State
@@ -344,8 +352,34 @@ const DoctorDashboard = () => {
         fetchResponses();
       }
       if (activeTab === 'feedbacks') fetchFeedbacks();
+      if (activeTab === 'financials') fetchEarnings();
     }
   }, [activeTab, user]);
+
+  const fetchEarnings = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/payments/doctor/earnings/${user.id}`);
+      setEarningsStats(res.data);
+      const wRes = await axios.get(`http://localhost:5000/api/payments/doctor/withdrawals?doctorId=${user.id}`);
+      setWithdrawals(wRes.data);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleWithdrawal = async (e) => {
+    e.preventDefault();
+    if (!withdrawAmount || withdrawAmount <= 0) return;
+    setIsWithdrawing(true);
+    try {
+      await axios.post('http://localhost:5000/api/payments/doctor/withdraw', { doctorId: user.id, amount: withdrawAmount });
+      showNotification('success', 'Withdrawal request submitted!');
+      setWithdrawAmount('');
+      fetchEarnings();
+    } catch (err) {
+      showNotification('error', err.response?.data?.message || 'Withdrawal failed');
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   const showNotification = (type, message) => {
     setNotification({ type, message });
@@ -385,7 +419,12 @@ const DoctorDashboard = () => {
           category: res.data.category || '',
           experience_years: res.data.experience_years || '',
           license_number: res.data.license_number || '',
-          bio: res.data.bio || ''
+          bio: res.data.bio || '',
+          session_fee: res.data.session_fee || 0,
+          bank_account: res.data.bank_account || '',
+          bank_name: res.data.bank_name || '',
+          bank_branch: res.data.bank_branch || '',
+          bank_holder_name: res.data.bank_holder_name || ''
         });
       }
     } catch (err) {
@@ -583,6 +622,12 @@ const DoctorDashboard = () => {
               >
                 <FileText className="h-5 w-5" /> <span>My Articles</span>
               </button>
+              <button 
+                onClick={() => setActiveTab('financials')}
+                className={`w-full flex items-center space-x-3 p-4 rounded-2xl font-bold transition-all ${activeTab === 'financials' ? 'bg-rose-600 text-white shadow-lg shadow-rose-200' : 'text-slate-600 hover:bg-slate-50 border border-transparent hover:border-slate-100'}`}
+              >
+                <Wallet className="h-5 w-5" /> <span>Financials</span>
+              </button>
             </nav>
           </div>
         </div>
@@ -632,6 +677,37 @@ const DoctorDashboard = () => {
                     </div>
                   </div>
 
+                  {/* FINANCIAL DETAILS */}
+                  <div className="pt-6 border-t border-slate-100 space-y-6">
+                     <h4 className="text-sm font-black text-rose-600 uppercase tracking-widest flex items-center gap-2">
+                        <CreditCard className="h-4 w-4"/> Fee & Settlement Details
+                     </h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Session Fee (LKR)</label>
+                          <input type="number" className="w-full px-4 py-3 bg-rose-50 border border-rose-100 rounded-xl outline-none focus:ring-4 focus:border-rose-400 font-bold text-rose-700" placeholder="e.g. 3500" value={profileForm.session_fee} onChange={e => setProfileForm({...profileForm, session_fee: e.target.value})} />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Bank Holder Name</label>
+                          <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400" placeholder="e.g. John Doe" value={profileForm.bank_holder_name} onChange={e => setProfileForm({...profileForm, bank_holder_name: e.target.value})} />
+                       </div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Bank Name</label>
+                          <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400" placeholder="e.g. Bank of Ceylon" value={profileForm.bank_name} onChange={e => setProfileForm({...profileForm, bank_name: e.target.value})} />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Branch</label>
+                          <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400" placeholder="e.g. Colombo 07" value={profileForm.bank_branch} onChange={e => setProfileForm({...profileForm, bank_branch: e.target.value})} />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Number</label>
+                          <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400" placeholder="e.g. 0001234567" value={profileForm.bank_account} onChange={e => setProfileForm({...profileForm, bank_account: e.target.value})} />
+                       </div>
+                     </div>
+                  </div>
+
                   <div className="space-y-2">
                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Professional Bio</label>
                      <textarea className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-emerald-400 min-h-[120px]" placeholder="Brief professional description..." value={profileForm.bio} onChange={e => setProfileForm({...profileForm, bio: e.target.value})}></textarea>
@@ -659,6 +735,30 @@ const DoctorDashboard = () => {
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">License No.<span className="text-slate-800 text-base normal-case font-bold">{profDetails?.license_number || '-'}</span></p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest flex flex-col gap-1">Session Fee<span className="text-rose-600 text-base normal-case font-black">LKR {profDetails?.session_fee || '0.00'}</span></p>
+                  </div>
+                  <div className="col-span-1 md:col-span-2 pt-4 border-t border-slate-50 mt-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2"><Landmark className="h-3 w-3" /> Settlement Bank Details</p>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-slate-400">Bank</p>
+                        <p className="text-xs font-bold text-slate-700">{profDetails?.bank_name || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-slate-400">Branch</p>
+                        <p className="text-xs font-bold text-slate-700">{profDetails?.bank_branch || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-slate-400">Account</p>
+                        <p className="text-xs font-bold text-slate-700">{profDetails?.bank_account || '-'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-slate-400">Holder</p>
+                        <p className="text-xs font-bold text-slate-700">{profDetails?.bank_holder_name || '-'}</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="col-span-1 md:col-span-2 pt-4 border-t border-slate-50 mt-2">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Professional Biography</p>
@@ -994,6 +1094,91 @@ const DoctorDashboard = () => {
           {activeTab === 'articles' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 min-h-[600px]">
                <BlogManagement authorId={user.id} isEmbedded={true} />
+            </div>
+          )}
+
+          {/* TAB: FINANCIALS */}
+          {activeTab === 'financials' && (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+              {/* Stats Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 <div className="bg-emerald-600 p-6 rounded-[32px] text-white shadow-xl shadow-emerald-200">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2 flex items-center gap-2"><PieChart className="h-3 w-3"/> Total Gross Sales</p>
+                    <h3 className="text-3xl font-black tracking-tight">LKR {Number(earningsStats.total_earned / 0.8 || 0).toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold mt-2 opacity-70">Before 20% system fees</p>
+                 </div>
+                 <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-2"><ArrowDownCircle className="h-3 w-3 text-emerald-500"/> Total My Earnings</p>
+                    <h3 className="text-3xl font-black tracking-tight text-slate-800">LKR {Number(earningsStats.total_earned).toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold mt-2 text-emerald-600">Pure 80% doctor share</p>
+                 </div>
+                 <div className="bg-indigo-600 p-6 rounded-[32px] text-white shadow-xl shadow-indigo-200">
+                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-2 flex items-center gap-2"><Landmark className="h-3 w-3"/> Withdrawable Balance</p>
+                    <h3 className="text-3xl font-black tracking-tight">LKR {Number(earningsStats.available_balance).toLocaleString()}</h3>
+                    <p className="text-[10px] font-bold mt-2 opacity-70">Available for settlement</p>
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 {/* Withdrawal Form */}
+                 <div className="lg:col-span-1 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
+                    <h4 className="text-lg font-black text-slate-800 tracking-tight mb-6 flex items-center gap-3">
+                       <Banknote className="h-5 w-5 text-indigo-500" /> Request Withdrawal
+                    </h4>
+                    <form onSubmit={handleWithdrawal} className="space-y-4">
+                       <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 mb-4">
+                          <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1">Target Account</p>
+                          <p className="text-sm font-bold text-indigo-700 truncate">{profDetails?.bank_name || 'No Bank Set'} - {profDetails?.bank_account || 'N/A'}</p>
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Amount to Withdraw (LKR)</label>
+                          <input 
+                             type="number" 
+                             className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 font-black text-slate-800"
+                             placeholder="Min LKR 1000"
+                             value={withdrawAmount}
+                             onChange={e => setWithdrawAmount(e.target.value)}
+                          />
+                       </div>
+                       <button 
+                          type="submit"
+                          disabled={isWithdrawing || !withdrawAmount || Number(withdrawAmount) > earningsStats.available_balance}
+                          className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all text-sm uppercase tracking-widest disabled:opacity-50"
+                       >
+                          {isWithdrawing ? <Loader2 className="h-4 w-4 animate-spin mx-auto"/> : 'Proceed Withdrawal'}
+                       </button>
+                    </form>
+                 </div>
+
+                 {/* Settlement History */}
+                 <div className="lg:col-span-2 bg-white p-8 rounded-[40px] shadow-sm border border-slate-100">
+                    <h4 className="text-lg font-black text-slate-800 tracking-tight mb-6 flex items-center gap-3">
+                       <Clock className="h-5 w-5 text-slate-400" /> Withdrawal History
+                    </h4>
+                    {withdrawals.length === 0 ? (
+                       <div className="py-20 text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                          <p className="text-slate-400 font-bold">No previous settlements found</p>
+                       </div>
+                    ) : (
+                       <div className="space-y-3">
+                          {withdrawals.map(w => (
+                             <div key={w.id} className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between">
+                                <div>
+                                   <p className="text-xs font-black text-slate-800 tracking-tight">LKR {Number(w.amount).toLocaleString()}</p>
+                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{format(new Date(w.created_at), 'MMM d, yyyy')}</p>
+                                </div>
+                                <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
+                                   w.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                   w.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                   {w.status}
+                                </span>
+                             </div>
+                          ))}
+                       </div>
+                    )}
+                 </div>
+              </div>
             </div>
           )}
         </div>
