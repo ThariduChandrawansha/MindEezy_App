@@ -55,7 +55,7 @@ exports.createUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const [users] = await db.execute(`
-      SELECT u.id, u.username, u.email, u.role, u.created_at, pd.category 
+      SELECT u.id, u.username, u.email, u.role, u.status, u.created_at, pd.category 
       FROM users u
       LEFT JOIN professional_details pd ON u.id = pd.user_id
       ORDER BY u.created_at DESC
@@ -138,5 +138,18 @@ exports.deleteUser = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error deleting user' });
+  }
+};
+
+// Update User Status
+exports.updateUserStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  try {
+    await db.execute('UPDATE users SET status = ? WHERE id = ?', [status, id]);
+    res.json({ message: 'User status updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error updating status' });
   }
 };
