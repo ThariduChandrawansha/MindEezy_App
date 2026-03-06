@@ -1,0 +1,70 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam handwritten false
+skinparam classAttributeIconSize 0
+actor "Public User" as Public
+actor "Customer" as Customer
+actor "Doctor" as Doctor
+actor "Admin" as Admin
+rectangle "MindEezy System" {
+  
+  ' Public Use Cases
+  usecase "Register & Login" as UC_Auth
+  usecase "Reset Password" as UC_ResetPwd
+  usecase "View Public Blogs" as UC_ViewBlogs
+  usecase "View Emergency Services" as UC_ViewEmergency
+  
+  ' Customer Use Cases
+  usecase "Manage Patient Profile" as UC_PatientProfile
+  usecase "Search Professionals" as UC_SearchDocs
+  usecase "Book Appointment" as UC_BookAppt
+  usecase "Process Payment" as UC_Payment
+  usecase "Log Daily Mood" as UC_LogMood
+  usecase "Write Journal Entry" as UC_WriteJournal
+  usecase "Receive AI Sentiment Analysis" as UC_AISentiment
+  usecase "Take Clinical Assessment" as UC_TakeAssessment
+  usecase "Submit Feedback" as UC_SubmitFeedback
+  
+  ' Doctor Use Cases
+  usecase "Manage Professional Profile" as UC_DocProfile
+  usecase "Manage Availability" as UC_ManageAvail
+  usecase "Review Patient Bookings" as UC_ViewAppts
+  usecase "Access Patient Records" as UC_ViewPatientData
+  usecase "Submit Blog for Review" as UC_SubmitBlog
+  usecase "Create Assessments" as UC_CreateAssessment
+  usecase "View Revenue Share" as UC_ViewRevenue
+  
+  ' Admin Use Cases
+  usecase "Manage Users" as UC_ManageUsers
+  usecase "Approve/Reject Blogs" as UC_ApproveBlogs
+  usecase "Manage Blog Categories" as UC_ManageBlogCats
+  usecase "Track System Revenue" as UC_ViewSysRevenue
+  usecase "View System Metrics" as UC_OverallDashboard
+}
+Public --> UC_Auth
+Public --> UC_ResetPwd
+Public --> UC_ViewBlogs
+Public --> UC_ViewEmergency
+Customer --> UC_PatientProfile
+Customer --> UC_SearchDocs
+Customer --> UC_BookAppt
+Customer --> UC_Payment
+Customer --> UC_LogMood
+Customer --> UC_WriteJournal
+Customer --> UC_AISentiment
+Customer --> UC_TakeAssessment
+Customer --> UC_SubmitFeedback
+Doctor --> UC_DocProfile
+Doctor --> UC_ManageAvail
+Doctor --> UC_ViewAppts
+Doctor --> UC_ViewPatientData
+Doctor --> UC_SubmitBlog
+Doctor --> UC_CreateAssessment
+Doctor --> UC_ViewRevenue
+Admin --> UC_ManageUsers
+Admin --> UC_ApproveBlogs
+Admin --> UC_ManageBlogCats
+Admin --> UC_ViewSysRevenue
+Admin --> UC_OverallDashboard
+@enduml
