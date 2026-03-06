@@ -1,0 +1,70 @@
+@startuml
+skinparam maxMessageSize 180
+autonumber
+
+actor "Patient" as Patient
+actor "Doctor" as Doctor
+actor "Admin" as Admin
+participant "React Frontend" as UI
+participant "Node.js API" as API
+database "MySQL Database" as DB
+
+== Patient & Doctor Interaction (Clinical Flow) ==
+Patient -> UI: Book Appointment & Pay Fee
+UI -> API: POST /api/payments/charge
+API -> DB: Insert Appointment (Confirmed)
+API -> DB: Log 80% Doctor Revenue & 20% System Fee
+DB --> API: Success
+API --> UI: Payment Receipt
+UI --> Patient: Confirm Booking
+
+Doctor -> UI: Open Dashboard Schedule
+UI -> API: GET /api/public/appointments (Doctor)
+API -> DB: Fetch assigned Appointments & Patient Data
+DB --> API: Patient Records
+API --> UI: JSON Data
+UI --> Doctor: Display Patient Profile & Session Time
+
+Patient -> UI: Log Daily Mood & Journal
+UI -> API: POST /api/journals
+API -> DB: Save Journal Entry & Sentiment
+DB --> API: Success
+
+Doctor -> UI: Review Patient Clinical Data
+UI -> API: GET /api/journals/patient
+API -> DB: Retrieve Patient Moods & Journals
+DB --> API: Clinical Data
+API --> UI: Formatted Data
+UI --> Doctor: Display Patient Sentiment Overview
+
+== Doctor & Admin Interaction (Content Flow) ==
+Doctor -> UI: Write & Submit Article (Blog)
+UI -> API: POST /api/blogs (Status: Pending)
+API -> DB: Insert Blog Record
+DB --> API: Success
+API --> UI: Blog Submission successful
+UI --> Doctor: Display Pending Status
+
+Admin -> UI: Open Admin Editorial Dashboard
+UI -> API: GET /api/blogs?status=pending
+API -> DB: Fetch Pending Blogs
+DB --> API: Pending Content List
+API --> UI: Display Content Data
+UI --> Admin: Review Article Content
+
+Admin -> UI: Click "Approve & Publish"
+UI -> API: PUT /api/blogs/:id/status (Published)
+API -> DB: Update Blog Status
+DB --> API: Success
+API --> UI: Publisher Confirmation
+UI --> Admin: Confirm Article is Live
+
+== Public / Patient Consumption ==
+Patient -> UI: Browse Knowledge Base
+UI -> API: GET /api/public/blogs
+API -> DB: Fetch Published Blogs
+DB --> API: Approved Articles
+API --> UI: Display Blog Cards
+UI --> Patient: Reads Doctor's Approved Article
+
+@enduml
