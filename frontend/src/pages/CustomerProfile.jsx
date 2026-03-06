@@ -5,7 +5,8 @@ import axios from 'axios';
 import { 
   User, Settings, Heart, Bell, Key, MapPin, Book, Calendar, Clock, Camera,
   ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, X, Loader2, ClipboardList, Video,
-  Star, ExternalLink, UserCheck, Stethoscope, MessageCircle
+  Star, ExternalLink, UserCheck, Stethoscope, MessageCircle,
+  CreditCard, ShieldCheck, Lock, Landmark, Wallet
 } from 'lucide-react';
 import { format, addDays, startOfToday, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, subMonths, addMonths, isSameDay, parseISO } from 'date-fns';
 import BookAppointmentModal from '../components/BookAppointmentModal';
@@ -47,6 +48,9 @@ const CustomerProfile = () => {
   const [activeVideoRoom, setActiveVideoRoom] = useState(null);
   const [feedbackTarget, setFeedbackTarget] = useState(null); // appointment obj for feedback
   const [feedbackGiven, setFeedbackGiven] = useState(new Set()); // set of appointment IDs that got feedback
+  const [paymentTarget, setPaymentTarget] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [cardForm, setCardForm] = useState({ holder: '', number: '', expiry: '', cvc: '' });
 
   const emojis = [
     { level: 1, label: 'Awful', icon: '😭', color: 'bg-rose-100 text-rose-600 border-rose-200 hover:bg-rose-200' },
@@ -586,7 +590,15 @@ const CustomerProfile = () => {
                           </div>
                         </div>
                         <div className="flex flex-col sm:flex-row items-center gap-2">
-                          {app.status === 'confirmed' && (
+                          {app.status === 'confirmed' && app.payment_status === 'unpaid' && (
+                            <button
+                              onClick={() => setPaymentTarget(app)}
+                              className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-md shrink-0"
+                            >
+                              <CreditCard className="h-3.5 w-3.5" /> Pay LKR {app.amount}
+                            </button>
+                          )}
+                          {app.status === 'confirmed' && app.payment_status === 'paid' && (
                             <button
                               onClick={() => setActiveVideoRoom({
                                 roomName: `mindeezy-consult-${app.id}`,
@@ -1084,6 +1096,111 @@ const CustomerProfile = () => {
             fetchAppointments(); // Refresh to update reviewed state
           }}
         />
+      )}
+
+      {/* Payment Modal (Mock) */}
+      {paymentTarget && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+           <div className="bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col scale-in-95 animate-in zoom-in slide-in-from-bottom-8">
+              <div className="p-8 bg-gradient-to-br from-indigo-600 to-blue-700 text-white relative">
+                 <button onClick={() => setPaymentTarget(null)} className="absolute top-6 right-6 p-2 hover:bg-white/20 rounded-full transition-colors"><X className="h-5 w-5" /></button>
+                 <div className="flex items-center gap-3 mb-6">
+                    <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
+                       <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                       <h3 className="text-2xl font-black tracking-tight">Secure Checkout</h3>
+                       <p className="text-white/70 text-[10px] font-black uppercase tracking-widest">MindEezy Patient Billing</p>
+                    </div>
+                 </div>
+                 <div className="p-6 bg-white/10 rounded-3xl border border-white/20 backdrop-blur-md">
+                    <div className="flex justify-between items-center mb-2">
+                       <span className="text-xs font-bold opacity-80">Consultation with {paymentTarget.professional_name}</span>
+                       <span className="text-xl font-black">LKR {paymentTarget.amount}</span>
+                    </div>
+                    <p className="text-[10px] font-medium opacity-60">Professional Share (80%) + System Maintenance (20%)</p>
+                 </div>
+              </div>
+
+              <div className="p-10 space-y-8 bg-slate-50/50">
+                 <div className="space-y-4">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Card Holder Name</label>
+                       <div className="relative">
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input 
+                             type="text" 
+                             className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 font-bold" 
+                             placeholder="E.G. Savindu Manahara" 
+                             value={cardForm.holder}
+                             onChange={e => setCardForm({...cardForm, holder: e.target.value})}
+                          />
+                       </div>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-2">Card Details</label>
+                       <div className="relative">
+                          <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <input 
+                             type="text" 
+                             className="w-full pl-12 pr-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 font-bold" 
+                             placeholder="0000 0000 0000 0000" 
+                             value={cardForm.number}
+                             onChange={e => setCardForm({...cardForm, number: e.target.value})}
+                          />
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <input 
+                          type="text" 
+                          className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 font-bold" 
+                          placeholder="MM/YY" 
+                          value={cardForm.expiry}
+                          onChange={e => setCardForm({...cardForm, expiry: e.target.value})}
+                       />
+                       <input 
+                          type="password" 
+                          maxlength="3" 
+                          className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 font-bold" 
+                          placeholder="CVC" 
+                          value={cardForm.cvc}
+                          onChange={e => setCardForm({...cardForm, cvc: e.target.value})}
+                       />
+                    </div>
+                 </div>
+
+                 <div className="flex flex-col gap-4">
+                    <button 
+                       disabled={isProcessingPayment}
+                       onClick={async () => {
+                          setIsProcessingPayment(true);
+                          try {
+                             await axios.post(`http://localhost:5000/api/payments/process/${paymentTarget.id}`, {
+                                cardHolder: cardForm.holder,
+                                cardNumber: cardForm.number
+                             });
+                             showNotification('success', 'Payment successful! Session is now confirmed.');
+                             setPaymentTarget(null);
+                             setCardForm({ holder: '', number: '', expiry: '', cvc: '' });
+                             fetchAppointments();
+                          } catch (err) {
+                             showNotification('error', 'Payment processing failed.');
+                          } finally {
+                             setIsProcessingPayment(false);
+                          }
+                       }}
+                       className="w-full py-5 bg-indigo-600 text-white rounded-[24px] font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 group uppercase tracking-widest text-xs disabled:opacity-50"
+                    >
+                       {isProcessingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4 group-hover:animate-bounce" />}
+                       {isProcessingPayment ? 'Processing...' : `Pay LKR ${paymentTarget.amount} Now`}
+                    </button>
+                    <p className="text-[10px] text-center text-slate-400 font-bold flex items-center justify-center gap-2 uppercase tracking-tight">
+                       <ShieldCheck className="h-3 w-3" /> End-to-end encrypted • Student Project Demo
+                    </p>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
     </div>
   );
