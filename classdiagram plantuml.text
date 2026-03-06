@@ -1,0 +1,148 @@
+@startuml
+skinparam handwritten false
+skinparam classAttributeIconSize 0
+
+class Users {
+  +id : int <<PK>>
+  +username : varchar
+  +email : varchar
+  +password : varchar
+  +role : enum
+  +created_at : timestamp
+}
+
+class PatientDetails {
+  +id : int <<PK>>
+  +user_id : int <<FK>>
+  +age : int
+  +gender : enum
+  +address : varchar
+  +phone : varchar
+  +medical_history : text
+  +stress_triggers : text
+  +profile_pic_path : text
+  +marital_status : enum
+  +employment_status : enum
+  +created_at : datetime
+  +updated_at : datetime
+}
+
+class ProfessionalDetails {
+  +id : int <<PK>>
+  +user_id : int <<FK>>
+  +qualification : varchar
+  +specialty : varchar
+  +category : enum
+  +experience_years : int
+  +license_number : varchar
+  +bio : text
+  +profile_pic_path : text
+  +availability : longtext
+  +online_available : boolean
+  +created_at : datetime
+  +updated_at : datetime
+}
+
+class Appointments {
+  +id : int <<PK>>
+  +user_id : int <<FK>>
+  +professional_id : int <<FK>>
+  +appointment_datetime : datetime
+  +status : enum
+  +notes : text
+  +is_online : boolean
+  +created_at : datetime
+}
+
+class Feedbacks {
+  +id : int <<PK>>
+  +appointment_id : int <<FK>>
+  +patient_id : int <<FK>>
+  +doctor_id : int <<FK>>
+  +rating : int
+  +comment : text
+  +created_at : datetime
+}
+
+class Moods {
+  +id : int <<PK>>
+  +user_id : int <<FK>>
+  +mood_date : date
+  +mood_level : int
+  +note : text
+  +sentiment_score : decimal
+  +created_at : datetime
+}
+
+class Journals {
+  +id : int <<PK>>
+  +user_id : int <<FK>>
+  +journal_date : date
+  +entry : mediumtext
+  +sentiment_analysis : longtext
+  +created_at : datetime
+  +updated_at : datetime
+}
+
+class Assessments {
+  +id : int <<PK>>
+  +professional_id : int <<FK>>
+  +name : varchar
+  +description : text
+  +questions : longtext
+  +created_at : datetime
+}
+
+class AssessmentResponses {
+  +id : int <<PK>>
+  +assessment_id : int <<FK>>
+  +user_id : int <<FK>>
+  +responses : longtext
+  +score : decimal
+  +response_date : datetime
+  +notes : text
+}
+
+class BlogCategories {
+  +id : int <<PK>>
+  +name : varchar
+  +description : text
+  +cat_image_path : text
+  +created_at : datetime
+}
+
+class Blogs {
+  +id : int <<PK>>
+  +category_id : int <<FK>>
+  +author_id : int <<FK>>
+  +title : varchar
+  +content : mediumtext
+  +publish_date : datetime
+  +image_path_1 : text
+  +image_path_2 : text
+  +image_path_3 : text
+  +status : enum
+  +views : int
+}
+
+Users "1" -- "1" PatientDetails : has >
+Users "1" -- "1" ProfessionalDetails : has >
+
+Users "1" -- "*" Appointments : books >
+Users "1" -- "*" Appointments : receives <
+
+Appointments "1" -- "1" Feedbacks : gets >
+Users "1" -- "*" Feedbacks : writes >
+Users "1" -- "*" Feedbacks : evaluated in <
+
+Users "1" -- "*" Moods : logs >
+Users "1" -- "*" Journals : writes >
+
+Users "1" -- "*" Assessments : creates >
+Assessments "1" -- "*" AssessmentResponses : collects >
+Users "1" -- "*" AssessmentResponses : submits >
+
+BlogCategories "1" -- "*" Blogs : groups <
+Users "1" -- "*" Blogs : authors >
+
+@enduml

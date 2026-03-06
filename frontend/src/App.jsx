@@ -19,6 +19,7 @@ import Contact from './pages/Contact';
 import Professionals from './pages/Professionals';
 import ProfessionalProfile from './pages/ProfessionalProfile';
 import EmergencyServices from './pages/EmergencyServices';
+import ResetPassword from './pages/ResetPassword';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles, useDashboardLayout = false }) => {
@@ -67,6 +68,7 @@ function App() {
           
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+          <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
           
           {/* Customer Profile (Front side layout) */}
           <Route 

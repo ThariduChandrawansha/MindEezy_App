@@ -1,0 +1,74 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam handwritten false
+skinparam classAttributeIconSize 0
+
+actor "Patient" as Patient
+actor "Doctor" as Doctor
+actor "Admin" as Admin
+
+rectangle "MindEezy System" {
+  
+  ' General / Shared Use Cases
+  usecase "Register & Login" as UC_Auth
+  usecase "Manage Personal Profile" as UC_Profile
+  
+  ' Patient Specific Use Cases
+  usecase "Search & View Doctors" as UC_SearchDocs
+  usecase "Book Appointment" as UC_BookAppt
+  usecase "Process Payment" as UC_Payment
+  usecase "Log Daily Mood" as UC_LogMood
+  usecase "Write Journal Entry" as UC_WriteJournal
+  usecase "Take Clinical Assessment" as UC_TakeAssessment
+  usecase "Submit Doctor Feedback" as UC_SubmitFeedback
+  usecase "View Public Blogs / Emergency Info" as UC_ViewPublicInfo
+  
+  ' Doctor Specific Use Cases
+  usecase "Manage Availability Schedule" as UC_ManageAvail
+  usecase "Review Patient Bookings" as UC_ViewAppts
+  usecase "Access Assigned Patient Records" as UC_ViewPatientData
+  usecase "Write & Submit Blogs" as UC_SubmitBlog
+  usecase "Create & Assign Assessments" as UC_CreateAssessment
+  usecase "View Earnings/Revenue" as UC_ViewEarnings
+  
+  ' Admin Specific Use Cases
+  usecase "Manage All System Users" as UC_ManageUsers
+  usecase "Review & Approve Pending Blogs" as UC_ApproveBlogs
+  usecase "Manage Blog Categories" as UC_ManageBlogCats
+  usecase "Track Overall System Revenue" as UC_ViewSysRevenue
+  usecase "View High-Level Metrics (Dashboard)" as UC_Dashboard
+}
+
+' Patient Relationships
+Patient --> UC_Auth
+Patient --> UC_Profile
+Patient --> UC_SearchDocs
+Patient --> UC_BookAppt
+Patient --> UC_Payment
+Patient --> UC_LogMood
+Patient --> UC_WriteJournal
+Patient --> UC_TakeAssessment
+Patient --> UC_SubmitFeedback
+Patient --> UC_ViewPublicInfo
+
+' Doctor Relationships
+Doctor --> UC_Auth
+Doctor --> UC_Profile
+Doctor --> UC_ManageAvail
+Doctor --> UC_ViewAppts
+Doctor --> UC_ViewPatientData
+Doctor --> UC_SubmitBlog
+Doctor --> UC_CreateAssessment
+Doctor --> UC_ViewEarnings
+
+' Admin Relationships
+Admin --> UC_Auth
+Admin --> UC_Profile
+Admin --> UC_ManageUsers
+Admin --> UC_ApproveBlogs
+Admin --> UC_ManageBlogCats
+Admin --> UC_ViewSysRevenue
+Admin --> UC_Dashboard
+
+@enduml
