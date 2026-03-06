@@ -43,7 +43,6 @@ const DashboardLayout = ({ children }) => {
     { name: 'User Management', path: '/admin/users', icon: Users },
     { name: 'Blog Categories', path: '/admin/categories', icon: FolderTree },
     { name: 'Blog Posts', path: '/admin/blogs', icon: FileText },
-    { name: 'System Health', path: '/admin/system', icon: Settings },
   ];
 
   const links = user?.role === 'admin' ? adminLinks : doctorLinks;
