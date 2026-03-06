@@ -5,7 +5,8 @@ const {
   getUserById, 
   createUser, 
   updateUser, 
-  deleteUser 
+  deleteUser,
+  updateUserStatus
 } = require('../controllers/userController');
 
 const multer = require('multer');
@@ -29,6 +30,7 @@ router.get('/:id', getUserById);
 router.post('/', createUser);
 router.put('/:id', updateUser);
 router.delete('/:id', deleteUser);
+router.patch('/:id/status', updateUserStatus);
 
 // Upload Route
 router.post('/upload', upload.single('image'), (req, res) => {

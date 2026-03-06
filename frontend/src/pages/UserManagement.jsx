@@ -11,10 +11,13 @@ import {
   X, 
   Loader2, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  Power
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const UserManagement = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,6 +92,17 @@ const UserManagement = () => {
       } catch (err) {
         showNotification('error', 'Failed to delete user');
       }
+    }
+  };
+
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'deactive' : 'active';
+      await axios.patch(`http://localhost:5000/api/users/${userId}/status`, { status: newStatus });
+      showNotification('success', `User status changed to ${newStatus}`);
+      fetchUsers();
+    } catch (err) {
+      showNotification('error', 'Failed to update user status');
     }
   };
 
@@ -220,6 +234,7 @@ const UserManagement = () => {
               <tr className="bg-slate-50/50 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">
                 <th className="px-6 py-4">User Details</th>
                 <th className="px-6 py-4">Role</th>
+                <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Member Since</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -262,11 +277,27 @@ const UserManagement = () => {
                         {user.role}
                       </span>
                     </td>
+                    <td className="px-6 py-4 not-italic">
+                      <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                        user.status === 'deactive' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                      }`}>
+                        {user.status || 'active'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 not-italic text-sm text-slate-500">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right not-italic">
                       <div className="flex items-center justify-end space-x-2">
+                        {currentUser?.id !== user.id && (
+                          <button 
+                            onClick={() => handleToggleStatus(user.id, user.status || 'active')}
+                            className={`p-2 rounded-lg transition-all ${user.status === 'deactive' ? 'text-green-600 hover:bg-green-50' : 'text-rose-600 hover:bg-rose-50'}`}
+                            title={user.status === 'deactive' ? 'Activate User' : 'Deactivate User'}
+                          >
+                            <Power className="h-4 w-4" />
+                          </button>
+                        )}
                         <button 
                           onClick={() => handleOpenView(user)}
                           className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
