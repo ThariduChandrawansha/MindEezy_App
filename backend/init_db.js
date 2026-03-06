@@ -54,6 +54,8 @@ async function initDB() {
         medical_history TEXT,
         stress_triggers TEXT,
         profile_pic_path TEXT,
+        marital_status ENUM('Single', 'Married', 'In a Relationship'),
+        employment_status ENUM('Employed', 'Unemployed'),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

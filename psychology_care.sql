@@ -233,6 +233,8 @@ CREATE TABLE `patient_details` (
   `medical_history` text DEFAULT NULL,
   `stress_triggers` text DEFAULT NULL,
   `profile_pic_path` text DEFAULT NULL,
+  `marital_status` enum('Single','Married','In a Relationship') DEFAULT NULL,
+  `employment_status` enum('Employed','Unemployed') DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

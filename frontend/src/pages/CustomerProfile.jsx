@@ -5,7 +5,7 @@ import axios from 'axios';
 import { 
   User, Settings, Heart, Bell, Key, MapPin, Book, Calendar, Clock, Camera,
   ChevronLeft, ChevronRight, CheckCircle2, AlertCircle, X, Loader2, ClipboardList, Video,
-  Star, ExternalLink, UserCheck, Stethoscope
+  Star, ExternalLink, UserCheck, Stethoscope, MessageCircle
 } from 'lucide-react';
 import { format, addDays, startOfToday, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, subMonths, addMonths, isSameDay, parseISO } from 'date-fns';
 import BookAppointmentModal from '../components/BookAppointmentModal';
@@ -60,7 +60,8 @@ const CustomerProfile = () => {
   const [patientDetails, setPatientDetails] = useState(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    age: '', gender: '', address: '', phone: '', medical_history: '', stress_triggers: ''
+    age: '', gender: '', address: '', phone: '', medical_history: '', stress_triggers: '',
+    marital_status: '', employment_status: ''
   });
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -98,7 +99,9 @@ const CustomerProfile = () => {
           address: res.data.address || '',
           phone: res.data.phone || '',
           medical_history: res.data.medical_history || '',
-          stress_triggers: res.data.stress_triggers || ''
+          stress_triggers: res.data.stress_triggers || '',
+          marital_status: res.data.marital_status || '',
+          employment_status: res.data.employment_status || ''
         });
       }
     } catch (err) {
@@ -472,6 +475,26 @@ const CustomerProfile = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Marital Status</label>
+                           <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-indigo-400" value={profileForm.marital_status} onChange={e => setProfileForm({...profileForm, marital_status: e.target.value})}>
+                              <option value="">Select Status</option>
+                              <option value="Single">Single</option>
+                              <option value="Married">Married</option>
+                              <option value="In a Relationship">In a Relationship</option>
+                           </select>
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Employment Status</label>
+                           <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-indigo-400" value={profileForm.employment_status} onChange={e => setProfileForm({...profileForm, employment_status: e.target.value})}>
+                              <option value="">Select Status</option>
+                              <option value="Employed">Employed</option>
+                              <option value="Unemployed">Unemployed</option>
+                           </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Phone</label>
                            <input type="text" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:border-indigo-400" placeholder="+123456789" value={profileForm.phone} onChange={e => setProfileForm({...profileForm, phone: e.target.value})} />
                         </div>
@@ -503,6 +526,12 @@ const CustomerProfile = () => {
                      <div className="space-y-1">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Full Name<span className="text-slate-800 text-base normal-case font-bold">{user?.username}</span></p>
                      </div>
+                                           <div className="space-y-1">
+                                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Marital Status<span className="text-slate-800 text-base normal-case font-bold">{patientDetails?.marital_status || "Not provided"}</span></p>
+                                           </div>
+                                           <div className="space-y-1">
+                                               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Employment Status<span className="text-slate-800 text-base normal-case font-bold">{patientDetails?.employment_status || "Not provided"}</span></p>
+                                           </div>
                      <div className="space-y-1">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex flex-col gap-1">Email Address<span className="text-slate-800 text-base normal-case font-bold">{user?.email}</span></p>
                      </div>
@@ -947,7 +976,7 @@ const CustomerProfile = () => {
                     {/* Mood Tracker */}
                     <div className="bg-white p-6 border border-slate-100 rounded-3xl shadow-sm">
                        <h4 className="text-xs font-black uppercase text-slate-400 tracking-[0.2em] mb-4 flex items-center"><Heart className="h-4 w-4 mr-2 text-rose-400 align-text-bottom"/> How were you feeling?</h4>
-                       <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                       <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-6">
                          {emojis.map(e => (
                            <button 
                              key={e.level}
@@ -959,6 +988,18 @@ const CustomerProfile = () => {
                              <span className="text-[10px] font-bold uppercase tracking-widest">{e.label}</span>
                            </button>
                          ))}
+                       </div>
+
+                       {/* Mood Note Input */}
+                       <div className="space-y-3 pt-6 border-t border-slate-50">
+                          <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center ml-2"><MessageCircle className="h-3 w-3 mr-2 text-rose-400"/> Mood Notes</label>
+                          <input 
+                             type="text"
+                             className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300 transition-all font-medium text-slate-700 placeholder:text-slate-300"
+                             placeholder="Briefly describe your current state (e.g. 'Feeling a bit anxious', 'Excited for today')..."
+                             value={entryData.note}
+                             onChange={e => setEntryData({...entryData, note: e.target.value})}
+                          />
                        </div>
                     </div>
 

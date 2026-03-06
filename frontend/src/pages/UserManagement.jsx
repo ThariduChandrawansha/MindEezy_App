@@ -427,6 +427,31 @@ const UserManagement = () => {
                           <option value="non-binary">Non-binary</option>
                         </select>
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Marital Status</label>
+                        <select 
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm"
+                          value={formData.profileData.marital_status || ''}
+                          onChange={(e) => setFormData({...formData, profileData: {...formData.profileData, marital_status: e.target.value}})}
+                        >
+                          <option value="">Select Status</option>
+                          <option value="Single">Single</option>
+                          <option value="Married">Married</option>
+                          <option value="In a Relationship">In a Relationship</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Employment Status</label>
+                        <select 
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm"
+                          value={formData.profileData.employment_status || ''}
+                          onChange={(e) => setFormData({...formData, profileData: {...formData.profileData, employment_status: e.target.value}})}
+                        >
+                          <option value="">Select Status</option>
+                          <option value="Employed">Employed</option>
+                          <option value="Unemployed">Unemployed</option>
+                        </select>
+                      </div>
                       <div className="col-span-full space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Current Address</label>
                         <input 
@@ -569,6 +594,14 @@ const UserManagement = () => {
                     <div className="flex justify-between items-center text-[10px] font-black">
                       <span className="text-slate-400">Gender / Age</span>
                       <span className="text-blue-600">{selectedUser.profile?.gender || 'N/A'} • {selectedUser.profile?.age || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black">
+                      <span className="text-slate-400">Marital Status</span>
+                      <span className="text-blue-600">{selectedUser.profile?.marital_status || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-black">
+                      <span className="text-slate-400">Employment</span>
+                      <span className="text-blue-600">{selectedUser.profile?.employment_status || 'N/A'}</span>
                     </div>
                     <div className="flex flex-col gap-2">
                        <span className="text-slate-400 text-[10px] font-black">Mental History Summary</span>
